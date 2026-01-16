@@ -5,6 +5,7 @@ import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.response.DoctorDto;
 import gt.com.xfactory.dto.response.PageResponse;
 import gt.com.xfactory.service.impl.DoctorService;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.core.MediaType;
 @RequestScoped
 @Path("/api/v1/doctors")
 @Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("user")
 public class DoctorController {
     @Inject
     DoctorService doctorService;
