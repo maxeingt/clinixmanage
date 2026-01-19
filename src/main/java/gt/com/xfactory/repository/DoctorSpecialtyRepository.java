@@ -1,6 +1,7 @@
 package gt.com.xfactory.repository;
 
 import gt.com.xfactory.dto.response.SpecialtyDto;
+import gt.com.xfactory.entity.DoctorEntity;
 import gt.com.xfactory.entity.DoctorSpecialtyEntity;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,6 +21,13 @@ public class DoctorSpecialtyRepository implements PanacheRepository<DoctorSpecia
                         .name(ds.getSpecialty().getName())
                         .description(ds.getSpecialty().getDescription())
                         .build())
+                .collect(Collectors.toList());
+    }
+
+    public List<DoctorEntity> findDoctorsBySpecialtyId(UUID specialtyId) {
+        return find("id.specialtyId", specialtyId)
+                .stream()
+                .map(DoctorSpecialtyEntity::getDoctor)
                 .collect(Collectors.toList());
     }
 }
