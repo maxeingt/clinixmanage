@@ -5,20 +5,19 @@ import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
 import gt.com.xfactory.dto.response.MedicalAppointmentDto;
-import gt.com.xfactory.dto.response.MedicalHistGynecoObstetricDto;
 import gt.com.xfactory.dto.response.MedicalHistoryPathologicalFamDto;
 import gt.com.xfactory.dto.response.PageResponse;
 import gt.com.xfactory.dto.response.PatientDto;
 import gt.com.xfactory.entity.MedicalAppointmentEntity;
-import gt.com.xfactory.entity.MedicalHistGynecoObstetricEntity;
 import gt.com.xfactory.entity.MedicalHistoryPathologicalFamEntity;
 import gt.com.xfactory.entity.PatientEntity;
+import gt.com.xfactory.entity.enums.AppointmentStatus;
 import gt.com.xfactory.repository.ClinicRepository;
 import gt.com.xfactory.repository.DoctorRepository;
 import gt.com.xfactory.repository.MedicalAppointmentRepository;
-import gt.com.xfactory.repository.MedicalHistGynecoObstetricRepository;
 import gt.com.xfactory.repository.MedicalHistoryPathologicalFamRepository;
 import gt.com.xfactory.repository.PatientRepository;
+import gt.com.xfactory.repository.SpecialtyRepository;
 import jakarta.transaction.Transactional;
 import gt.com.xfactory.utils.QueryUtils;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -27,6 +26,8 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,9 +46,6 @@ public class PatientService {
     PatientRepository patientRepository;
 
     @Inject
-    MedicalHistGynecoObstetricRepository medicalHistGynecoObstetricRepository;
-
-    @Inject
     MedicalHistoryPathologicalFamRepository medicalHistoryPathologicalFamRepository;
 
     @Inject
@@ -59,6 +57,9 @@ public class PatientService {
     @Inject
     ClinicRepository clinicRepository;
 
+    @Inject
+    SpecialtyRepository specialtyRepository;
+
     public PageResponse<PatientDto> getPatients(PatientFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching patients with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
@@ -66,7 +67,8 @@ public class PatientService {
         Map<String, Object> params = new HashMap<>();
         List<String> conditions = new ArrayList<>();
 
-        QueryUtils.addLikeCondition(filter.name, "name", "name", conditions, params);
+        QueryUtils.addLikeCondition(filter.name, "firstName", "firstName", conditions, params);
+        QueryUtils.addLikeCondition(filter.name, "lastName", "lastName", conditions, params);
         QueryUtils.addLikeCondition(filter.phone, "phone", "phone", conditions, params);
         QueryUtils.addLikeCondition(filter.maritalStatus, "maritalStatus", "maritalStatus", conditions, params);
 
@@ -84,23 +86,9 @@ public class PatientService {
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
     }
 
-    public List<MedicalHistGynecoObstetricDto> getMedicalHistGynecoObstetricByPatientId(UUID patientId) {
-        log.info("Fetching medical hist gyneco obstetric for patient: {}", patientId);
-
-        // Verify patient exists
-        patientRepository.findByIdOptional(patientId)
-                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
-
-        return medicalHistGynecoObstetricRepository.findByPatientId(patientId)
-                .stream()
-                .map(toMedicalHistGynecoDto)
-                .collect(Collectors.toList());
-    }
-
     public List<MedicalHistoryPathologicalFamDto> getMedicalHistoryPathologicalFamByPatientId(UUID patientId) {
         log.info("Fetching medical history pathological fam for patient: {}", patientId);
 
-        // Verify patient exists
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
@@ -110,13 +98,10 @@ public class PatientService {
                 .collect(Collectors.toList());
     }
 
-    // Medical Appointment CRUD operations
-
     public List<MedicalAppointmentDto> getMedicalAppointmentsByPatientId(UUID patientId, MedicalAppointmentFilterDto filter) {
         log.info("Fetching medical appointments for patient: {} with filter - doctorId: {}, clinicId: {}",
                 patientId, filter != null ? filter.doctorId : null, filter != null ? filter.clinicId : null);
 
-        // Verify patient exists
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
@@ -144,13 +129,15 @@ public class PatientService {
         appointment.setDoctor(doctor);
         appointment.setClinic(clinic);
         appointment.setAppointmentDate(request.getAppointmentDate());
-        appointment.setObservation(request.getObservation());
-        appointment.setMedicalHistory(request.getMedicalHistory());
+        appointment.setReason(request.getReason());
+        appointment.setDiagnosis(request.getDiagnosis());
+        appointment.setNotes(request.getNotes());
+        appointment.setStatus(request.getStatus() != null ? request.getStatus() : AppointmentStatus.scheduled);
 
-        if (request.getMedHistGynecoId() != null) {
-            var medHistGyneco = medicalHistGynecoObstetricRepository.findByIdOptional(request.getMedHistGynecoId())
-                    .orElseThrow(() -> new NotFoundException("Medical hist gyneco not found with id: " + request.getMedHistGynecoId()));
-            appointment.setMedHistGyneco(medHistGyneco);
+        if (request.getSpecialtyId() != null) {
+            var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
+                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
+            appointment.setSpecialty(specialty);
         }
 
         medicalAppointmentRepository.persist(appointment);
@@ -179,15 +166,20 @@ public class PatientService {
         appointment.setDoctor(doctor);
         appointment.setClinic(clinic);
         appointment.setAppointmentDate(request.getAppointmentDate());
-        appointment.setObservation(request.getObservation());
-        appointment.setMedicalHistory(request.getMedicalHistory());
+        appointment.setReason(request.getReason());
+        appointment.setDiagnosis(request.getDiagnosis());
+        appointment.setNotes(request.getNotes());
 
-        if (request.getMedHistGynecoId() != null) {
-            var medHistGyneco = medicalHistGynecoObstetricRepository.findByIdOptional(request.getMedHistGynecoId())
-                    .orElseThrow(() -> new NotFoundException("Medical hist gyneco not found with id: " + request.getMedHistGynecoId()));
-            appointment.setMedHistGyneco(medHistGyneco);
+        if (request.getStatus() != null) {
+            appointment.setStatus(request.getStatus());
+        }
+
+        if (request.getSpecialtyId() != null) {
+            var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
+                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
+            appointment.setSpecialty(specialty);
         } else {
-            appointment.setMedHistGyneco(null);
+            appointment.setSpecialty(null);
         }
 
         medicalAppointmentRepository.persist(appointment);
@@ -207,29 +199,33 @@ public class PatientService {
         log.info("Medical appointment deleted: {}", appointmentId);
     }
 
+    private int calculateAge(LocalDate birthdate) {
+        if (birthdate == null) {
+            return 0;
+        }
+        return Period.between(birthdate, LocalDate.now()).getYears();
+    }
+
     public static final Function<PatientEntity, PatientDto> toDto = entity ->
             PatientDto.builder()
                     .id(entity.getId())
-                    .name(entity.getName())
-                    .age(entity.getAge())
+                    .firstName(entity.getFirstName())
+                    .lastName(entity.getLastName())
+                    .birthdate(entity.getBirthdate())
+                    .age(entity.getBirthdate() != null ? Period.between(entity.getBirthdate(), LocalDate.now()).getYears() : 0)
+                    .gender(entity.getGender() != null ? entity.getGender().name() : null)
+                    .bloodGroup(entity.getBloodGroup() != null ? entity.getBloodGroup().name() : null)
                     .phone(entity.getPhone())
+                    .email(entity.getEmail())
                     .address(entity.getAddress())
                     .maritalStatus(entity.getMaritalStatus())
                     .occupation(entity.getOccupation())
-                    .build();
-
-    public static final Function<MedicalHistGynecoObstetricEntity, MedicalHistGynecoObstetricDto> toMedicalHistGynecoDto = entity ->
-            MedicalHistGynecoObstetricDto.builder()
-                    .id(entity.getId())
-                    .patientId(entity.getPatient().getId())
-                    .medicalHistoryType(entity.getMedicalHistoryType())
-                    .lastMenstrualPeriod(entity.getLastMenstrualPeriod())
-                    .weight(entity.getWeight())
-                    .height(entity.getHeight())
-                    .duration(entity.getDuration())
-                    .cycles(entity.getCycles())
-                    .reliable(entity.getReliable())
-                    .papanicolaou(entity.getPapanicolaou())
+                    .emergencyContactName(entity.getEmergencyContactName())
+                    .emergencyContactPhone(entity.getEmergencyContactPhone())
+                    .allergies(entity.getAllergies())
+                    .chronicConditions(entity.getChronicConditions())
+                    .insuranceProvider(entity.getInsuranceProvider())
+                    .insuranceNumber(entity.getInsuranceNumber())
                     .build();
 
     public static final Function<MedicalHistoryPathologicalFamEntity, MedicalHistoryPathologicalFamDto> toMedicalHistoryPathologicalFamDto = entity ->
@@ -244,11 +240,18 @@ public class PatientService {
             MedicalAppointmentDto.builder()
                     .id(entity.getId())
                     .patientId(entity.getPatient().getId())
+                    .patientName(entity.getPatient().getFirstName() + " " + entity.getPatient().getLastName())
                     .doctorId(entity.getDoctor().getId())
+                    .doctorName(entity.getDoctor().getFirstName() + " " + entity.getDoctor().getLastName())
                     .clinicId(entity.getClinic().getId())
-                    .medHistGynecoId(entity.getMedHistGyneco() != null ? entity.getMedHistGyneco().getId() : null)
+                    .clinicName(entity.getClinic().getName())
+                    .specialtyId(entity.getSpecialty() != null ? entity.getSpecialty().getId() : null)
+                    .specialtyName(entity.getSpecialty() != null ? entity.getSpecialty().getName() : null)
+                    .status(entity.getStatus() != null ? entity.getStatus().name() : null)
                     .appointmentDate(entity.getAppointmentDate())
-                    .observation(entity.getObservation())
-                    .medicalHistory(entity.getMedicalHistory())
+                    .reason(entity.getReason())
+                    .diagnosis(entity.getDiagnosis())
+                    .notes(entity.getNotes())
+                    .createdAt(entity.getCreatedAt())
                     .build();
 }

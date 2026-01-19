@@ -1,40 +1,46 @@
 package gt.com.xfactory.dto.request;
 
-import gt.com.xfactory.entity.enums.AppointmentStatus;
+import gt.com.xfactory.entity.enums.MedicalRecordType;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MedicalAppointmentRequest {
+public class MedicalRecordRequest {
 
     @NotNull(message = "Patient ID is required")
     private UUID patientId;
 
+    private UUID appointmentId;
+
     @NotNull(message = "Doctor ID is required")
     private UUID doctorId;
 
-    @NotNull(message = "Clinic ID is required")
-    private UUID clinicId;
-
     private UUID specialtyId;
 
-    private AppointmentStatus status;
+    private MedicalRecordType recordType;
 
-    @NotNull(message = "Appointment date is required")
-    private LocalDateTime appointmentDate;
+    private String chiefComplaint;
 
-    private String reason;
+    private String presentIllness;
+
+    private String physicalExam;
 
     private String diagnosis;
 
-    private String notes;
+    private String treatmentPlan;
+
+    private Map<String, Object> vitalSigns;
+
+    private Map<String, Object> specialtyData;
+
+    private Object attachments;
 }

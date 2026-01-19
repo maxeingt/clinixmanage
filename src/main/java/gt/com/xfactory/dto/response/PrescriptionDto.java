@@ -6,27 +6,26 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class MedicalAppointmentDto implements Serializable {
+public class PrescriptionDto implements Serializable {
     private UUID id;
+    private UUID medicalRecordId;
     private UUID patientId;
     private String patientName;
     private UUID doctorId;
     private String doctorName;
-    private UUID clinicId;
-    private String clinicName;
-    private UUID specialtyId;
-    private String specialtyName;
-    private String status;
-    private LocalDateTime appointmentDate;
-    private String reason;
-    private String diagnosis;
+    private List<Map<String, Object>> medications;
     private String notes;
+    private LocalDate issueDate;
+    private LocalDate expiryDate;
     private LocalDateTime createdAt;
 }

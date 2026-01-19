@@ -5,7 +5,6 @@ import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
 import gt.com.xfactory.dto.response.MedicalAppointmentDto;
-import gt.com.xfactory.dto.response.MedicalHistGynecoObstetricDto;
 import gt.com.xfactory.dto.response.MedicalHistoryPathologicalFamDto;
 import gt.com.xfactory.dto.response.PageResponse;
 import gt.com.xfactory.dto.response.PatientDto;
@@ -52,18 +51,10 @@ public class PatientController {
     }
 
     @GET
-    @Path("/{id}/medical-hist-gyneco-obstetric")
-    public List<MedicalHistGynecoObstetricDto> getMedicalHistGynecoObstetric(@PathParam("id") UUID patientId) {
-        return patientService.getMedicalHistGynecoObstetricByPatientId(patientId);
-    }
-
-    @GET
     @Path("/{id}/medical-history-pathological-fam")
     public List<MedicalHistoryPathologicalFamDto> getMedicalHistoryPathologicalFam(@PathParam("id") UUID patientId) {
         return patientService.getMedicalHistoryPathologicalFamByPatientId(patientId);
     }
-
-    // Medical Appointment CRUD endpoints
 
     @GET
     @Path("/{id}/appointments")

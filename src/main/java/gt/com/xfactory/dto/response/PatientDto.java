@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Data
@@ -14,10 +15,21 @@ import java.util.UUID;
 @Builder
 public class PatientDto implements Serializable {
     private UUID id;
-    private String name;
-    private Integer age;
+    private String firstName;
+    private String lastName;
+    private LocalDate birthdate;
+    private int age;
+    private String gender;
+    private String bloodGroup;
     private String phone;
+    private String email;
     private String address;
     private String maritalStatus;
     private String occupation;
+    private String emergencyContactName;
+    private String emergencyContactPhone;
+    private String allergies;
+    private String chronicConditions;
+    private String insuranceProvider;
+    private String insuranceNumber;
 }

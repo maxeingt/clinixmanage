@@ -1,5 +1,6 @@
 package gt.com.xfactory.entity;
 
+import gt.com.xfactory.entity.enums.AppointmentStatus;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -39,17 +40,24 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     private ClinicEntity clinic;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "med_hist_gyneco_id")
-    private MedicalHistGynecoObstetricEntity medHistGyneco;
+    @JoinColumn(name = "specialty_id")
+    private SpecialtyEntity specialty;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private AppointmentStatus status = AppointmentStatus.scheduled;
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
 
-    @Column(name = "observation", columnDefinition = "TEXT")
-    private String observation;
+    @Column(name = "reason", columnDefinition = "TEXT")
+    private String reason;
 
-    @Column(name = "medical_history", columnDefinition = "TEXT")
-    private String medicalHistory;
+    @Column(name = "diagnosis", columnDefinition = "TEXT")
+    private String diagnosis;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -60,6 +68,9 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        if (status == null) {
+            status = AppointmentStatus.scheduled;
+        }
     }
 
     @PreUpdate
