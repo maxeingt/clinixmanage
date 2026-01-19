@@ -4,8 +4,10 @@ import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
 import gt.com.xfactory.dto.response.DoctorDto;
 import gt.com.xfactory.dto.response.PageResponse;
+import gt.com.xfactory.dto.response.SpecialtyDto;
 import gt.com.xfactory.entity.DoctorEntity;
 import gt.com.xfactory.repository.DoctorRepository;
+import gt.com.xfactory.repository.DoctorSpecialtyRepository;
 import gt.com.xfactory.utils.QueryUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -29,6 +31,9 @@ public class DoctorService {
     @Inject
     DoctorRepository doctorRepository;
 
+    @Inject
+    DoctorSpecialtyRepository doctorSpecialtyRepository;
+
     public PageResponse<DoctorDto> getDoctors(DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
@@ -44,7 +49,15 @@ public class DoctorService {
             query.append(String.join(" AND ", conditions));
         }
 
-        return toPageResponse(doctorRepository, query, pageRequest, params, toDto);
+        PageResponse<DoctorDto> response = toPageResponse(doctorRepository, query, pageRequest, params, toDto);
+
+        // Load specialties for each doctor
+        for (DoctorDto doctor : response.content) {
+            List<SpecialtyDto> specialties = doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId());
+            doctor.setSpecialties(specialties);
+        }
+
+        return response;
     }
 
     public static final Function<DoctorEntity, DoctorDto> toDto = entity ->
