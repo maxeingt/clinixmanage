@@ -41,4 +41,29 @@ public class MedicalAppointmentRepository implements PanacheRepository<MedicalAp
     public Optional<MedicalAppointmentEntity> findByIdOptional(UUID id) {
         return find("id", id).firstResultOptional();
     }
+
+    public List<MedicalAppointmentEntity> findByClinicId(UUID clinicId, MedicalAppointmentFilterDto filter) {
+        StringBuilder query = new StringBuilder("clinic.id = :clinicId");
+        Map<String, Object> params = new HashMap<>();
+        params.put("clinicId", clinicId);
+
+        if (filter != null) {
+            if (filter.doctorId != null) {
+                query.append(" AND doctor.id = :doctorId");
+                params.put("doctorId", filter.doctorId);
+            }
+            if (filter.startDate != null) {
+                query.append(" AND appointmentDate >= :startDate");
+                params.put("startDate", filter.startDate);
+            }
+            if (filter.endDate != null) {
+                query.append(" AND appointmentDate <= :endDate");
+                params.put("endDate", filter.endDate);
+            }
+        }
+
+        query.append(" ORDER BY appointmentDate ASC");
+
+        return find(query.toString(), params).list();
+    }
 }
