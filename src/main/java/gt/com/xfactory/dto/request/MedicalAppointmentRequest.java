@@ -16,7 +16,6 @@ import java.util.UUID;
 @Builder
 public class MedicalAppointmentRequest {
 
-    @NotNull(message = "Patient ID is required")
     private UUID patientId;
 
     @NotNull(message = "Doctor ID is required")
