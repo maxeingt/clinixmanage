@@ -43,7 +43,6 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @JoinColumn(name = "specialty_id")
     private SpecialtyEntity specialty;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private AppointmentStatus status = AppointmentStatus.scheduled;
 

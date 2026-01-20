@@ -46,7 +46,6 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     @JoinColumn(name = "doctor_id", nullable = false)
     private DoctorEntity doctor;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "record_type", nullable = false)
     private MedicalRecordType recordType = MedicalRecordType.consultation;
 
