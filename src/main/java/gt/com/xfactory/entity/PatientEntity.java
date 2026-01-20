@@ -42,7 +42,6 @@ public class PatientEntity extends PanacheEntityBase implements Serializable {
     @Column(name = "gender")
     private GenderType gender;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "blood_group")
     private BloodType bloodGroup;
 
