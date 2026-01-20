@@ -1,5 +1,6 @@
 package gt.com.xfactory.service.impl;
 
+import gt.com.xfactory.dto.request.ClinicRequest;
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
@@ -16,7 +17,9 @@ import gt.com.xfactory.repository.MedicalAppointmentRepository;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -47,6 +50,53 @@ public class ClinicService {
                 .stream()
                 .map(this::toClinicDto)
                 .collect(Collectors.toList());
+    }
+
+    public ClinicDto getClinicById(UUID id) {
+        log.info("Fetching clinic by id: {}", id);
+        return clinicRepository.findByIdOptional(id)
+                .map(this::toClinicDto)
+                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + id));
+    }
+
+    @Transactional
+    public ClinicDto createClinic(ClinicRequest request) {
+        log.info("Creating clinic with name: {}", request.getName());
+
+        ClinicEntity clinic = new ClinicEntity();
+        clinic.setName(request.getName());
+        clinic.setAddress(request.getAddress());
+        clinic.setPhone(request.getPhone());
+
+        clinicRepository.persist(clinic);
+        log.info("Clinic created with id: {}", clinic.getId());
+
+        return toClinicDto(clinic);
+    }
+
+    @Transactional
+    public ClinicDto updateClinic(UUID id, ClinicRequest request) {
+        log.info("Updating clinic with id: {}", id);
+
+        ClinicEntity clinic = clinicRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + id));
+
+        clinic.setName(request.getName());
+        clinic.setAddress(request.getAddress());
+        clinic.setPhone(request.getPhone());
+
+        clinicRepository.persist(clinic);
+        return toClinicDto(clinic);
+    }
+
+    @Transactional
+    public void deleteClinic(UUID id) {
+        log.info("Deleting clinic with id: {}", id);
+
+        ClinicEntity clinic = clinicRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + id));
+
+        clinicRepository.delete(clinic);
     }
 
     private ClinicDto toClinicDto(ClinicEntity entity) {

@@ -1,5 +1,6 @@
 package gt.com.xfactory.controller;
 
+import gt.com.xfactory.dto.request.ClinicRequest;
 import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.response.ClinicDto;
@@ -15,6 +16,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 
 import java.util.List;
 import java.util.UUID;
@@ -31,6 +33,33 @@ public class ClinicController {
     @PermitAll
     public List<ClinicDto> getAllClinics() {
         return clinicService.getAllClinics();
+    }
+
+    @GET
+    @Path("/{id}")
+    public ClinicDto getClinicById(@PathParam("id") UUID id) {
+        return clinicService.getClinicById(id);
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createClinic(@Valid ClinicRequest request) {
+        ClinicDto created = clinicService.createClinic(request);
+        return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public ClinicDto updateClinic(@PathParam("id") UUID id, @Valid ClinicRequest request) {
+        return clinicService.updateClinic(id, request);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deleteClinic(@PathParam("id") UUID id) {
+        clinicService.deleteClinic(id);
+        return Response.noContent().build();
     }
 
     @GET
