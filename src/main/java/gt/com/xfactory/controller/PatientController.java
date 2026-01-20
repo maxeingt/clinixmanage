@@ -2,6 +2,7 @@ package gt.com.xfactory.controller;
 
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
+import gt.com.xfactory.dto.request.PatientRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
 import gt.com.xfactory.dto.response.MedicalAppointmentDto;
@@ -42,6 +43,13 @@ public class PatientController {
             @Valid @BeanParam PatientFilterDto filter,
             @Valid @BeanParam CommonPageRequest pageRequest) {
         return patientService.getPatients(filter, pageRequest);
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createPatient(@Valid PatientRequest request) {
+        PatientDto created = patientService.createPatient(request);
+        return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
     @GET

@@ -38,7 +38,6 @@ public class PatientEntity extends PanacheEntityBase implements Serializable {
     @Column(name = "birthdate", nullable = false)
     private LocalDate birthdate;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "gender")
     private GenderType gender;
 

@@ -2,6 +2,7 @@ package gt.com.xfactory.service.impl;
 
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
+import gt.com.xfactory.dto.request.PatientRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
 import gt.com.xfactory.dto.response.MedicalAppointmentDto;
@@ -12,6 +13,8 @@ import gt.com.xfactory.entity.MedicalAppointmentEntity;
 import gt.com.xfactory.entity.MedicalHistoryPathologicalFamEntity;
 import gt.com.xfactory.entity.PatientEntity;
 import gt.com.xfactory.entity.enums.AppointmentStatus;
+import gt.com.xfactory.entity.enums.BloodType;
+import gt.com.xfactory.entity.enums.GenderType;
 import gt.com.xfactory.repository.ClinicRepository;
 import gt.com.xfactory.repository.DoctorRepository;
 import gt.com.xfactory.repository.MedicalAppointmentRepository;
@@ -77,6 +80,44 @@ public class PatientService {
         }
 
         return toPageResponse(patientRepository, query, pageRequest, params, toDto);
+    }
+
+    @Transactional
+    public PatientDto createPatient(PatientRequest request) {
+        log.info("Creating patient: {} {}", request.getFirstName(), request.getLastName());
+
+        PatientEntity patient = new PatientEntity();
+        patient.setFirstName(request.getFirstName());
+        patient.setLastName(request.getLastName());
+        patient.setBirthdate(request.getBirthdate());
+        patient.setPhone(request.getPhone());
+        patient.setEmail(request.getEmail());
+        patient.setAddress(request.getAddress());
+        patient.setMaritalStatus(request.getMaritalStatus() != null ? request.getMaritalStatus() : "Soltero");
+        patient.setOccupation(request.getOccupation());
+        patient.setEmergencyContactName(request.getEmergencyContactName());
+        patient.setEmergencyContactPhone(request.getEmergencyContactPhone());
+        patient.setAllergies(request.getAllergies());
+        patient.setChronicConditions(request.getChronicConditions());
+        patient.setInsuranceProvider(request.getInsuranceProvider());
+        patient.setInsuranceNumber(request.getInsuranceNumber());
+
+        if (request.getGender() != null && !request.getGender().isBlank()) {
+            try {
+                patient.setGender(GenderType.valueOf(request.getGender().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid gender value: {}", request.getGender());
+            }
+        }
+
+        if (request.getBloodGroup() != null && !request.getBloodGroup().isBlank()) {
+            patient.setBloodGroup(BloodType.fromValue(request.getBloodGroup()));
+        }
+
+        patientRepository.persist(patient);
+        log.info("Patient created with id: {}", patient.getId());
+
+        return toDto.apply(patient);
     }
 
     public PatientDto getPatientById(UUID patientId) {
