@@ -23,4 +23,8 @@ public class AssignClinicPermissionRequest {
     private Boolean adminUsers = false;
     private Boolean adminSpecialties = false;
     private Boolean manageAssignments = false;
+    private Boolean viewMedicalRecords = false;
+
+    // Opcionalmente, asignar usando una plantilla de rol
+    private UUID roleTemplateId;
 }

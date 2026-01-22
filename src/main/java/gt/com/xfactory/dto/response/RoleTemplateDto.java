@@ -5,18 +5,16 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserClinicPermissionDto implements Serializable {
-    private UUID userId;
-    private UUID clinicId;
-    private String clinicName;
+public class RoleTemplateDto {
+    private UUID id;
+    private String name;
+    private String description;
     private Boolean adminPatients;
     private Boolean adminDoctors;
     private Boolean adminAppointments;
@@ -25,7 +23,4 @@ public class UserClinicPermissionDto implements Serializable {
     private Boolean adminSpecialties;
     private Boolean manageAssignments;
     private Boolean viewMedicalRecords;
-    private UUID roleTemplateId;
-    private String roleTemplateName;
-    private LocalDateTime createdAt;
 }

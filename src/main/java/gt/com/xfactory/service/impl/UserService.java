@@ -5,10 +5,12 @@ import gt.com.xfactory.dto.request.UserRequest;
 import gt.com.xfactory.dto.response.UserClinicPermissionDto;
 import gt.com.xfactory.dto.response.UserDto;
 import gt.com.xfactory.entity.ClinicEntity;
+import gt.com.xfactory.entity.RoleTemplateEntity;
 import gt.com.xfactory.entity.UserClinicPermissionEntity;
 import gt.com.xfactory.entity.UserClinicPermissionId;
 import gt.com.xfactory.entity.UserEntity;
 import gt.com.xfactory.repository.ClinicRepository;
+import gt.com.xfactory.repository.RoleTemplateRepository;
 import gt.com.xfactory.repository.UserClinicPermissionRepository;
 import gt.com.xfactory.repository.UserRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,6 +35,9 @@ public class UserService {
 
     @Inject
     ClinicRepository clinicRepository;
+
+    @Inject
+    RoleTemplateRepository roleTemplateRepository;
 
     public List<UserDto> getAllUsers() {
         log.info("Fetching all users");
@@ -139,13 +144,32 @@ public class UserService {
             permission.setClinic(clinic);
         }
 
-        permission.setAdminPatients(request.getAdminPatients());
-        permission.setAdminDoctors(request.getAdminDoctors());
-        permission.setAdminAppointments(request.getAdminAppointments());
-        permission.setAdminClinics(request.getAdminClinics());
-        permission.setAdminUsers(request.getAdminUsers());
-        permission.setAdminSpecialties(request.getAdminSpecialties());
-        permission.setManageAssignments(request.getManageAssignments());
+        // Si se proporciona un roleTemplateId, usar los permisos de la plantilla
+        if (request.getRoleTemplateId() != null) {
+            RoleTemplateEntity roleTemplate = roleTemplateRepository.findByIdOptional(request.getRoleTemplateId())
+                    .orElseThrow(() -> new NotFoundException("Role template not found with id: " + request.getRoleTemplateId()));
+
+            permission.setRoleTemplate(roleTemplate);
+            permission.setAdminPatients(roleTemplate.getAdminPatients());
+            permission.setAdminDoctors(roleTemplate.getAdminDoctors());
+            permission.setAdminAppointments(roleTemplate.getAdminAppointments());
+            permission.setAdminClinics(roleTemplate.getAdminClinics());
+            permission.setAdminUsers(roleTemplate.getAdminUsers());
+            permission.setAdminSpecialties(roleTemplate.getAdminSpecialties());
+            permission.setManageAssignments(roleTemplate.getManageAssignments());
+            permission.setViewMedicalRecords(roleTemplate.getViewMedicalRecords());
+            log.info("Applying role template: {}", roleTemplate.getName());
+        } else {
+            // Usar permisos individuales del request
+            permission.setAdminPatients(request.getAdminPatients());
+            permission.setAdminDoctors(request.getAdminDoctors());
+            permission.setAdminAppointments(request.getAdminAppointments());
+            permission.setAdminClinics(request.getAdminClinics());
+            permission.setAdminUsers(request.getAdminUsers());
+            permission.setAdminSpecialties(request.getAdminSpecialties());
+            permission.setManageAssignments(request.getManageAssignments());
+            permission.setViewMedicalRecords(request.getViewMedicalRecords());
+        }
 
         userClinicPermissionRepository.persist(permission);
         log.info("Clinic permission assigned successfully");
@@ -194,6 +218,9 @@ public class UserService {
                     .adminUsers(permission.getAdminUsers())
                     .adminSpecialties(permission.getAdminSpecialties())
                     .manageAssignments(permission.getManageAssignments())
+                    .viewMedicalRecords(permission.getViewMedicalRecords())
+                    .roleTemplateId(permission.getRoleTemplate() != null ? permission.getRoleTemplate().getId() : null)
+                    .roleTemplateName(permission.getRoleTemplate() != null ? permission.getRoleTemplate().getName() : null)
                     .createdAt(permission.getCreatedAt())
                     .build();
 }

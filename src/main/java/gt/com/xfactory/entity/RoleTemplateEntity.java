@@ -5,26 +5,26 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
-@Table(name = "user_clinic_permission")
+@Table(name = "role_template")
 @Getter
 @Setter
-public class UserClinicPermissionEntity extends PanacheEntityBase {
+public class RoleTemplateEntity extends PanacheEntityBase implements Serializable {
 
-    @EmbeddedId
-    private UserClinicPermissionId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
+    private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
-    private UserEntity user;
+    @Column(name = "name", nullable = false, unique = true, length = 50)
+    private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("clinicId")
-    @JoinColumn(name = "clinic_id")
-    private ClinicEntity clinic;
+    @Column(name = "description", length = 255)
+    private String description;
 
     @Column(name = "admin_patients")
     private Boolean adminPatients = false;
@@ -49,10 +49,6 @@ public class UserClinicPermissionEntity extends PanacheEntityBase {
 
     @Column(name = "view_medical_records")
     private Boolean viewMedicalRecords = false;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role_template_id")
-    private RoleTemplateEntity roleTemplate;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
