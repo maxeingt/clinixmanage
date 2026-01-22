@@ -1,17 +1,30 @@
 package gt.com.xfactory.service.impl;
 
 import gt.com.xfactory.dto.request.CommonPageRequest;
+import gt.com.xfactory.dto.request.DoctorRequest;
 import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
+import gt.com.xfactory.dto.response.ClinicDto;
 import gt.com.xfactory.dto.response.DoctorDto;
 import gt.com.xfactory.dto.response.PageResponse;
 import gt.com.xfactory.dto.response.SpecialtyDto;
+import gt.com.xfactory.entity.ClinicEntity;
+import gt.com.xfactory.entity.DoctorClinicEntity;
+import gt.com.xfactory.entity.DoctorClinicId;
 import gt.com.xfactory.entity.DoctorEntity;
+import gt.com.xfactory.entity.DoctorSpecialtyEntity;
+import gt.com.xfactory.entity.DoctorSpecialtyId;
+import gt.com.xfactory.entity.SpecialtyEntity;
+import gt.com.xfactory.repository.ClinicRepository;
+import gt.com.xfactory.repository.DoctorClinicRepository;
 import gt.com.xfactory.repository.DoctorRepository;
 import gt.com.xfactory.repository.DoctorSpecialtyRepository;
+import gt.com.xfactory.repository.SpecialtyRepository;
 import gt.com.xfactory.utils.QueryUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
@@ -20,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
@@ -33,6 +47,15 @@ public class DoctorService {
 
     @Inject
     DoctorSpecialtyRepository doctorSpecialtyRepository;
+
+    @Inject
+    SpecialtyRepository specialtyRepository;
+
+    @Inject
+    ClinicRepository clinicRepository;
+
+    @Inject
+    DoctorClinicRepository doctorClinicRepository;
 
     public PageResponse<DoctorDto> getDoctors(DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
@@ -58,6 +81,214 @@ public class DoctorService {
         }
 
         return response;
+    }
+
+    public DoctorDto getDoctorById(UUID id) {
+        log.info("Fetching doctor by id: {}", id);
+        DoctorEntity doctor = doctorRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + id));
+
+        DoctorDto dto = toDto.apply(doctor);
+        dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(id));
+        return dto;
+    }
+
+    @Transactional
+    public DoctorDto createDoctor(DoctorRequest request) {
+        log.info("Creating doctor: {} {}", request.getFirstName(), request.getLastName());
+
+        DoctorEntity doctor = new DoctorEntity();
+        doctor.setFirstName(request.getFirstName());
+        doctor.setLastName(request.getLastName());
+        doctor.setBirthdate(request.getBirthdate());
+        doctor.setAddress(request.getAddress());
+        doctor.setEmail(request.getMail());
+        doctor.setPhone(request.getPhone());
+        doctor.setCreatedAt(LocalDate.now());
+
+        doctorRepository.persist(doctor);
+        log.info("Doctor created with id: {}", doctor.getId());
+
+        return toDto.apply(doctor);
+    }
+
+    @Transactional
+    public DoctorDto updateDoctor(UUID id, DoctorRequest request) {
+        log.info("Updating doctor with id: {}", id);
+
+        DoctorEntity doctor = doctorRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + id));
+
+        doctor.setFirstName(request.getFirstName());
+        doctor.setLastName(request.getLastName());
+        doctor.setBirthdate(request.getBirthdate());
+        doctor.setAddress(request.getAddress());
+        doctor.setEmail(request.getMail());
+        doctor.setPhone(request.getPhone());
+        doctor.setUpdatedAt(LocalDate.now());
+
+        doctorRepository.persist(doctor);
+
+        DoctorDto dto = toDto.apply(doctor);
+        dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(id));
+        return dto;
+    }
+
+    @Transactional
+    public void deleteDoctor(UUID id) {
+        log.info("Deleting doctor with id: {}", id);
+
+        DoctorEntity doctor = doctorRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + id));
+
+        // Delete doctor specialties first
+        doctorSpecialtyRepository.deleteByDoctorId(id);
+
+        doctorRepository.delete(doctor);
+        log.info("Doctor deleted successfully");
+    }
+
+    // ============ Specialty Management ============
+
+    public List<SpecialtyDto> getDoctorSpecialties(UUID doctorId) {
+        log.info("Fetching specialties for doctor: {}", doctorId);
+
+        // Verify doctor exists
+        doctorRepository.findByIdOptional(doctorId)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+
+        return doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctorId);
+    }
+
+    @Transactional
+    public SpecialtyDto addSpecialtyToDoctor(UUID doctorId, UUID specialtyId) {
+        log.info("Adding specialty {} to doctor {}", specialtyId, doctorId);
+
+        DoctorEntity doctor = doctorRepository.findByIdOptional(doctorId)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+
+        SpecialtyEntity specialty = specialtyRepository.findByIdOptional(specialtyId)
+                .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + specialtyId));
+
+        // Check if already assigned
+        var existing = doctorSpecialtyRepository.findByDoctorIdAndSpecialtyId(doctorId, specialtyId);
+        if (existing.isPresent()) {
+            log.info("Specialty already assigned to doctor");
+            return SpecialtyDto.builder()
+                    .id(specialty.getId())
+                    .name(specialty.getName())
+                    .description(specialty.getDescription())
+                    .build();
+        }
+
+        DoctorSpecialtyEntity doctorSpecialty = new DoctorSpecialtyEntity();
+        doctorSpecialty.setId(new DoctorSpecialtyId(doctorId, specialtyId));
+        doctorSpecialty.setDoctor(doctor);
+        doctorSpecialty.setSpecialty(specialty);
+
+        doctorSpecialtyRepository.persist(doctorSpecialty);
+        log.info("Specialty added to doctor successfully");
+
+        return SpecialtyDto.builder()
+                .id(specialty.getId())
+                .name(specialty.getName())
+                .description(specialty.getDescription())
+                .build();
+    }
+
+    @Transactional
+    public void removeSpecialtyFromDoctor(UUID doctorId, UUID specialtyId) {
+        log.info("Removing specialty {} from doctor {}", specialtyId, doctorId);
+
+        DoctorSpecialtyEntity doctorSpecialty = doctorSpecialtyRepository
+                .findByDoctorIdAndSpecialtyId(doctorId, specialtyId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Specialty " + specialtyId + " not assigned to doctor " + doctorId));
+
+        doctorSpecialtyRepository.delete(doctorSpecialty);
+        log.info("Specialty removed from doctor successfully");
+    }
+
+    // ============ Clinic Management ============
+
+    public List<ClinicDto> getDoctorClinics(UUID doctorId) {
+        log.info("Fetching clinics for doctor: {}", doctorId);
+
+        doctorRepository.findByIdOptional(doctorId)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+
+        return doctorClinicRepository.findByDoctorId(doctorId).stream()
+                .filter(dc -> dc.getActive() != null && dc.getActive())
+                .map(dc -> ClinicDto.builder()
+                        .id(dc.getClinic().getId())
+                        .name(dc.getClinic().getName())
+                        .address(dc.getClinic().getAddress())
+                        .phone(dc.getClinic().getPhone())
+                        .build())
+                .toList();
+    }
+
+    @Transactional
+    public ClinicDto addClinicToDoctor(UUID doctorId, UUID clinicId) {
+        log.info("Adding clinic {} to doctor {}", clinicId, doctorId);
+
+        DoctorEntity doctor = doctorRepository.findByIdOptional(doctorId)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+
+        ClinicEntity clinic = clinicRepository.findByIdOptional(clinicId)
+                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + clinicId));
+
+        var existing = doctorClinicRepository.findByDoctorIdAndClinicId(doctorId, clinicId);
+        if (existing.isPresent()) {
+            DoctorClinicEntity dc = existing.get();
+            if (dc.getActive() != null && dc.getActive()) {
+                log.info("Clinic already assigned to doctor");
+            } else {
+                dc.setActive(true);
+                dc.setAssignedAt(java.time.LocalDateTime.now());
+                dc.setUnassignedAt(null);
+                doctorClinicRepository.persist(dc);
+                log.info("Clinic reactivated for doctor");
+            }
+            return ClinicDto.builder()
+                    .id(clinic.getId())
+                    .name(clinic.getName())
+                    .address(clinic.getAddress())
+                    .phone(clinic.getPhone())
+                    .build();
+        }
+
+        DoctorClinicEntity doctorClinic = new DoctorClinicEntity();
+        doctorClinic.setId(new DoctorClinicId(doctorId, clinicId));
+        doctorClinic.setDoctor(doctor);
+        doctorClinic.setClinic(clinic);
+        doctorClinic.setAssignedAt(java.time.LocalDateTime.now());
+        doctorClinic.setActive(true);
+
+        doctorClinicRepository.persist(doctorClinic);
+        log.info("Clinic added to doctor successfully");
+
+        return ClinicDto.builder()
+                .id(clinic.getId())
+                .name(clinic.getName())
+                .address(clinic.getAddress())
+                .phone(clinic.getPhone())
+                .build();
+    }
+
+    @Transactional
+    public void removeClinicFromDoctor(UUID doctorId, UUID clinicId) {
+        log.info("Removing clinic {} from doctor {}", clinicId, doctorId);
+
+        DoctorClinicEntity doctorClinic = doctorClinicRepository
+                .findByDoctorIdAndClinicId(doctorId, clinicId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Clinic " + clinicId + " not assigned to doctor " + doctorId));
+
+        doctorClinic.setActive(false);
+        doctorClinic.setUnassignedAt(java.time.LocalDateTime.now());
+        doctorClinicRepository.persist(doctorClinic);
+        log.info("Clinic removed from doctor successfully");
     }
 
     public static final Function<DoctorEntity, DoctorDto> toDto = entity ->

@@ -83,4 +83,16 @@ public class DoctorClinicRepository implements PanacheRepository<DoctorClinicEnt
 
         return predicate;
     }
+
+    public java.util.Optional<DoctorClinicEntity> findByDoctorIdAndClinicId(UUID doctorId, UUID clinicId) {
+        return find("id.doctorId = ?1 and id.clinicId = ?2", doctorId, clinicId).firstResultOptional();
+    }
+
+    public List<DoctorClinicEntity> findByDoctorId(UUID doctorId) {
+        return list("id.doctorId", doctorId);
+    }
+
+    public long deleteByDoctorId(UUID doctorId) {
+        return delete("id.doctorId", doctorId);
+    }
 }

@@ -30,4 +30,12 @@ public class DoctorSpecialtyRepository implements PanacheRepository<DoctorSpecia
                 .map(DoctorSpecialtyEntity::getDoctor)
                 .collect(Collectors.toList());
     }
+
+    public java.util.Optional<DoctorSpecialtyEntity> findByDoctorIdAndSpecialtyId(UUID doctorId, UUID specialtyId) {
+        return find("id.doctorId = ?1 and id.specialtyId = ?2", doctorId, specialtyId).firstResultOptional();
+    }
+
+    public long deleteByDoctorId(UUID doctorId) {
+        return delete("id.doctorId", doctorId);
+    }
 }
