@@ -9,7 +9,6 @@ import gt.com.xfactory.dto.response.MedicalAppointmentDto;
 import gt.com.xfactory.dto.response.PageResponse;
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.service.impl.ClinicService;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -30,7 +29,6 @@ public class ClinicController {
     ClinicService clinicService;
 
     @GET
-    @PermitAll
     public List<ClinicDto> getAllClinics() {
         return clinicService.getAllClinics();
     }
