@@ -25,4 +25,5 @@ public class DoctorDto implements Serializable {
     private String address;
     private String mail;
     private List<SpecialtyDto> specialties;
+    private List<ClinicDto> clinics;
 }
