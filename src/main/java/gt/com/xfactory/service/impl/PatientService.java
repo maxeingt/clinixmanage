@@ -2,6 +2,7 @@ package gt.com.xfactory.service.impl;
 
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
+import gt.com.xfactory.dto.request.MedicalHistoryPathologicalFamRequest;
 import gt.com.xfactory.dto.request.PatientRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
@@ -139,6 +140,31 @@ public class PatientService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public MedicalHistoryPathologicalFamDto createMedicalHistoryPathologicalFam(MedicalHistoryPathologicalFamRequest request) {
+        log.info("Creating medical history pathological fam for patient: {}", request.getPatientId());
+
+        var patient = patientRepository.findByIdOptional(request.getPatientId())
+                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
+
+        MedicalHistoryPathologicalFamEntity entity = new MedicalHistoryPathologicalFamEntity();
+        entity.setPatient(patient);
+        entity.setMedicalHistoryType(request.getMedicalHistoryType());
+        entity.setDescription(request.getDescription());
+
+        medicalHistoryPathologicalFamRepository.persist(entity);
+        log.info("Medical history pathological fam created with id: {}", entity.getId());
+
+        // Actualizar bandera del paciente
+        if (!Boolean.TRUE.equals(patient.getHasPathologicalHistory())) {
+            patient.setHasPathologicalHistory(true);
+            patientRepository.persist(patient);
+            log.info("Patient {} marked as having pathological history", patient.getId());
+        }
+
+        return toMedicalHistoryPathologicalFamDto.apply(entity);
+    }
+
     public List<MedicalAppointmentDto> getMedicalAppointmentsByPatientId(UUID patientId, MedicalAppointmentFilterDto filter) {
         log.info("Fetching medical appointments for patient: {} with filter - doctorId: {}, clinicId: {}",
                 patientId, filter != null ? filter.doctorId : null, filter != null ? filter.clinicId : null);
@@ -267,6 +293,7 @@ public class PatientService {
                     .chronicConditions(entity.getChronicConditions())
                     .insuranceProvider(entity.getInsuranceProvider())
                     .insuranceNumber(entity.getInsuranceNumber())
+                    .hasPathologicalHistory(entity.getHasPathologicalHistory())
                     .build();
 
     public static final Function<MedicalHistoryPathologicalFamEntity, MedicalHistoryPathologicalFamDto> toMedicalHistoryPathologicalFamDto = entity ->

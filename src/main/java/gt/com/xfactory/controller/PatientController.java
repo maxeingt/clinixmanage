@@ -2,6 +2,7 @@ package gt.com.xfactory.controller;
 
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
+import gt.com.xfactory.dto.request.MedicalHistoryPathologicalFamRequest;
 import gt.com.xfactory.dto.request.PatientRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
@@ -62,6 +63,17 @@ public class PatientController {
     @Path("/{id}/medical-history-pathological-fam")
     public List<MedicalHistoryPathologicalFamDto> getMedicalHistoryPathologicalFam(@PathParam("id") UUID patientId) {
         return patientService.getMedicalHistoryPathologicalFamByPatientId(patientId);
+    }
+
+    @POST
+    @Path("/{id}/medical-history-pathological-fam")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response createMedicalHistoryPathologicalFam(
+            @PathParam("id") UUID patientId,
+            @Valid MedicalHistoryPathologicalFamRequest request) {
+        request.setPatientId(patientId);
+        MedicalHistoryPathologicalFamDto created = patientService.createMedicalHistoryPathologicalFam(request);
+        return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
     @GET

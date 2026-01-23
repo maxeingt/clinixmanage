@@ -77,6 +77,9 @@ public class PatientEntity extends PanacheEntityBase implements Serializable {
     @Column(name = "insurance_number", length = 50)
     private String insuranceNumber;
 
+    @Column(name = "has_pathological_history", nullable = false)
+    private Boolean hasPathologicalHistory = false;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
