@@ -32,7 +32,7 @@ import java.util.UUID;
 @RequestScoped
 @Path("/api/v1/patients")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed({"user", "admin", "doctor", "secretary"})
 public class PatientController {
 
     @Inject

@@ -15,7 +15,7 @@ import java.util.UUID;
 @RequestScoped
 @Path("/api/v1/role-templates")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed({"user", "admin", "doctor", "secretary"})
 public class RoleTemplateController {
 
     @Inject

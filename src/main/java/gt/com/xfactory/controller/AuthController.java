@@ -14,6 +14,9 @@ import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -23,7 +26,7 @@ import java.util.Set;
 @RequestScoped
 @Path("/api/v1/auth")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed({"user", "admin", "doctor", "secretary"})
 @Slf4j
 public class AuthController {
 
@@ -52,6 +55,13 @@ public class AuthController {
             // Usuario no existe, crear
             user = createUserFromToken(keycloakId);
             log.info("Usuario creado: {} con rol {}", user.getUsername(), user.getRole());
+        } else {
+            // Usuario existe, sincronizar rol desde Keycloak
+            String currentRole = determineRole(extractAllRoles());
+            if (!currentRole.equals(user.getRole())) {
+                log.info("Actualizando rol de {} de {} a {}", user.getUsername(), user.getRole(), currentRole);
+                user.setRole(currentRole);
+            }
         }
 
         return toDto(user);
@@ -60,7 +70,7 @@ public class AuthController {
     private UserEntity createUserFromToken(String keycloakId) {
         String username = jwt.getClaim("preferred_username");
         String email = jwt.getClaim("email");
-        Set<String> roles = extractRealmRoles();
+        Set<String> roles = extractAllRoles();
 
         UserEntity user = new UserEntity();
         user.setKeycloakId(keycloakId);
@@ -73,20 +83,43 @@ public class AuthController {
     }
 
     @SuppressWarnings("unchecked")
-    private Set<String> extractRealmRoles() {
+    private Set<String> extractAllRoles() {
+        Set<String> allRoles = new HashSet<>();
+
         try {
             Object realmAccess = jwt.getClaim("realm_access");
-            if (realmAccess instanceof java.util.Map) {
-                java.util.Map<String, Object> realmAccessMap = (java.util.Map<String, Object>) realmAccess;
+
+            if (realmAccess instanceof jakarta.json.JsonObject) {
+                jakarta.json.JsonObject jsonObj = (jakarta.json.JsonObject) realmAccess;
+                jakarta.json.JsonArray rolesArray = jsonObj.getJsonArray("roles");
+                if (rolesArray != null) {
+                    for (int i = 0; i < rolesArray.size(); i++) {
+                        allRoles.add(rolesArray.getString(i));
+                    }
+                }
+            } else if (realmAccess instanceof Map) {
+                Map<String, Object> realmAccessMap = (Map<String, Object>) realmAccess;
                 Object roles = realmAccessMap.get("roles");
-                if (roles instanceof java.util.Collection) {
-                    return new java.util.HashSet<>((java.util.Collection<String>) roles);
+
+                if (roles instanceof jakarta.json.JsonArray) {
+                    jakarta.json.JsonArray rolesArray = (jakarta.json.JsonArray) roles;
+                    for (int i = 0; i < rolesArray.size(); i++) {
+                        allRoles.add(rolesArray.getString(i));
+                    }
+                } else if (roles instanceof Collection) {
+                    for (Object role : (Collection<?>) roles) {
+                        if (role instanceof String) {
+                            allRoles.add((String) role);
+                        }
+                    }
                 }
             }
         } catch (Exception e) {
-            log.warn("No se pudieron extraer roles del token: {}", e.getMessage());
+            log.error("Error extrayendo realm roles: ", e);
         }
-        return Set.of();
+
+        log.info("Roles extraídos del token: {}", allRoles);
+        return allRoles;
     }
 
     private String determineRole(Set<String> keycloakRoles) {
