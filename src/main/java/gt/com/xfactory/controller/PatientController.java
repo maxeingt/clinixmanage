@@ -76,6 +76,17 @@ public class PatientController {
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
+    @PUT
+    @Path("/{id}/medical-history-pathological-fam/{historyId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public MedicalHistoryPathologicalFamDto updateMedicalHistoryPathologicalFam(
+            @PathParam("id") UUID patientId,
+            @PathParam("historyId") UUID historyId,
+            @Valid MedicalHistoryPathologicalFamRequest request) {
+        request.setPatientId(patientId);
+        return patientService.updateMedicalHistoryPathologicalFam(historyId, request);
+    }
+
     @GET
     @Path("/{id}/appointments")
     public List<MedicalAppointmentDto> getMedicalAppointments(

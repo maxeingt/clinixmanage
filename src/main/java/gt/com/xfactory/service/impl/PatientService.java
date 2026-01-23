@@ -165,6 +165,22 @@ public class PatientService {
         return toMedicalHistoryPathologicalFamDto.apply(entity);
     }
 
+    @Transactional
+    public MedicalHistoryPathologicalFamDto updateMedicalHistoryPathologicalFam(UUID historyId, MedicalHistoryPathologicalFamRequest request) {
+        log.info("Updating medical history pathological fam: {}", historyId);
+
+        var entity = medicalHistoryPathologicalFamRepository.find("id", historyId).firstResultOptional()
+                .orElseThrow(() -> new NotFoundException("Medical history not found with id: " + historyId));
+
+        entity.setMedicalHistoryType(request.getMedicalHistoryType());
+        entity.setDescription(request.getDescription());
+
+        medicalHistoryPathologicalFamRepository.persist(entity);
+        log.info("Medical history pathological fam updated: {}", historyId);
+
+        return toMedicalHistoryPathologicalFamDto.apply(entity);
+    }
+
     public List<MedicalAppointmentDto> getMedicalAppointmentsByPatientId(UUID patientId, MedicalAppointmentFilterDto filter) {
         log.info("Fetching medical appointments for patient: {} with filter - doctorId: {}, clinicId: {}",
                 patientId, filter != null ? filter.doctorId : null, filter != null ? filter.clinicId : null);
