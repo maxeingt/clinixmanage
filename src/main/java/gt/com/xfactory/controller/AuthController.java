@@ -1,32 +1,31 @@
-package gt.com.xfactory.filter;
+package gt.com.xfactory.controller;
 
+import gt.com.xfactory.dto.response.UserDto;
 import gt.com.xfactory.entity.UserEntity;
 import gt.com.xfactory.repository.UserRepository;
-import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.annotation.Priority;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.ext.Provider;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
 import java.util.Set;
 
 /**
- * Filtro que sincroniza automáticamente usuarios de Keycloak a la BD local.
- * Se ejecuta después de la autenticación en cada request protegido.
- * Si el usuario no existe en la BD, lo crea automáticamente.
+ * Controlador de autenticación.
+ * Maneja la sincronización de usuarios de Keycloak a la BD local.
  */
-@Provider
-@Priority(Priorities.AUTHENTICATION + 1)
+@RequestScoped
+@Path("/api/v1/auth")
+@Produces(MediaType.APPLICATION_JSON)
+@RolesAllowed("user")
 @Slf4j
-public class UserSyncFilter implements ContainerRequestFilter {
-
-    @Inject
-    SecurityIdentity securityIdentity;
+public class AuthController {
 
     @Inject
     JsonWebToken jwt;
@@ -34,40 +33,35 @@ public class UserSyncFilter implements ContainerRequestFilter {
     @Inject
     UserRepository userRepository;
 
-    @Override
-    public void filter(ContainerRequestContext requestContext) {
-        // Solo procesar si hay un usuario autenticado
-        if (securityIdentity.isAnonymous()) {
-            return;
+    /**
+     * Obtiene el usuario actual.
+     * Si no existe en la BD, lo crea automáticamente basado en el token de Keycloak.
+     * El frontend debe llamar este endpoint una vez después del login.
+     */
+    @GET
+    @Path("/me")
+    @Transactional
+    public UserDto me() {
+        String keycloakId = jwt.getSubject();
+        log.info("GET /auth/me - keycloakId: {}", keycloakId);
+
+        // Buscar usuario existente
+        UserEntity user = userRepository.findByKeycloakId(keycloakId).orElse(null);
+
+        if (user == null) {
+            // Usuario no existe, crear
+            user = createUserFromToken(keycloakId);
+            log.info("Usuario creado: {} con rol {}", user.getUsername(), user.getRole());
         }
 
-        try {
-            syncUser();
-        } catch (Exception e) {
-            log.error("Error sincronizando usuario: {}", e.getMessage(), e);
-            // No bloquear el request si falla la sincronización
-        }
+        return toDto(user);
     }
 
-    @Transactional
-    void syncUser() {
-        String keycloakId = jwt.getSubject();
-        if (keycloakId == null || keycloakId.isBlank()) {
-            log.warn("Token sin subject (keycloakId)");
-            return;
-        }
-
-        // Verificar si el usuario ya existe
-        if (userRepository.findByKeycloakId(keycloakId).isPresent()) {
-            return; // Usuario ya existe, no hacer nada
-        }
-
-        // Extraer datos del token
+    private UserEntity createUserFromToken(String keycloakId) {
         String username = jwt.getClaim("preferred_username");
         String email = jwt.getClaim("email");
         Set<String> roles = extractRealmRoles();
 
-        // Crear nuevo usuario
         UserEntity user = new UserEntity();
         user.setKeycloakId(keycloakId);
         user.setUsername(username != null ? username : "user_" + keycloakId.substring(0, 8));
@@ -75,13 +69,9 @@ public class UserSyncFilter implements ContainerRequestFilter {
         user.setRole(determineRole(roles));
 
         userRepository.persist(user);
-        log.info("Usuario sincronizado automáticamente: {} con rol {}", username, user.getRole());
+        return user;
     }
 
-    /**
-     * Extrae los roles del realm desde el token JWT.
-     * Los roles están en: realm_access.roles
-     */
     @SuppressWarnings("unchecked")
     private Set<String> extractRealmRoles() {
         try {
@@ -99,10 +89,6 @@ public class UserSyncFilter implements ContainerRequestFilter {
         return Set.of();
     }
 
-    /**
-     * Determina el rol de la aplicación basado en los roles de Keycloak.
-     * Prioridad: admin > doctor > secretary > user
-     */
     private String determineRole(Set<String> keycloakRoles) {
         if (keycloakRoles.contains("admin")) {
             return "ADMIN";
@@ -114,5 +100,17 @@ public class UserSyncFilter implements ContainerRequestFilter {
             return "SECRETARY";
         }
         return "USER";
+    }
+
+    private UserDto toDto(UserEntity user) {
+        return UserDto.builder()
+                .id(user.getId())
+                .keycloakId(user.getKeycloakId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
     }
 }
