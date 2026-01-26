@@ -1,5 +1,6 @@
 package gt.com.xfactory.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -8,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -26,7 +26,8 @@ public class PrescriptionRequest {
     private UUID doctorId;
 
     @NotNull(message = "Medications list is required")
-    private List<Map<String, Object>> medications;
+    @Valid
+    private List<PrescriptionMedicationRequest> medications;
 
     private String notes;
 

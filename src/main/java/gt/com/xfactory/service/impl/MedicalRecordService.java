@@ -1,15 +1,21 @@
 package gt.com.xfactory.service.impl;
 
+import gt.com.xfactory.dto.request.PrescriptionMedicationRequest;
 import gt.com.xfactory.dto.response.MedicalRecordDto;
 import gt.com.xfactory.dto.response.PrescriptionDto;
+import gt.com.xfactory.dto.response.PrescriptionMedicationDto;
 import gt.com.xfactory.dto.response.SpecialtyFormTemplateDto;
 import gt.com.xfactory.entity.MedicalRecordEntity;
+import gt.com.xfactory.entity.MedicationEntity;
 import gt.com.xfactory.entity.PrescriptionEntity;
+import gt.com.xfactory.entity.PrescriptionMedicationEntity;
 import gt.com.xfactory.entity.SpecialtyFormTemplateEntity;
 import gt.com.xfactory.entity.enums.MedicalRecordType;
 import gt.com.xfactory.repository.MedicalAppointmentRepository;
 import gt.com.xfactory.repository.MedicalRecordRepository;
+import gt.com.xfactory.repository.MedicationRepository;
 import gt.com.xfactory.repository.PatientRepository;
+import gt.com.xfactory.repository.PrescriptionMedicationRepository;
 import gt.com.xfactory.repository.PrescriptionRepository;
 import gt.com.xfactory.repository.DoctorRepository;
 import gt.com.xfactory.repository.SpecialtyFormTemplateRepository;
@@ -51,6 +57,12 @@ public class MedicalRecordService {
 
     @Inject
     PrescriptionRepository prescriptionRepository;
+
+    @Inject
+    PrescriptionMedicationRepository prescriptionMedicationRepository;
+
+    @Inject
+    MedicationRepository medicationRepository;
 
     public List<MedicalRecordDto> getMedicalRecordsByPatientId(UUID patientId) {
         log.info("Fetching medical records for patient: {}", patientId);
@@ -230,7 +242,7 @@ public class MedicalRecordService {
 
     @Transactional
     public PrescriptionDto createPrescription(UUID patientId, UUID medicalRecordId, UUID doctorId,
-                                               List<Map<String, Object>> medications, String notes,
+                                               List<PrescriptionMedicationRequest> medications, String notes,
                                                LocalDate issueDate, LocalDate expiryDate) {
         log.info("Creating prescription for patient: {}", patientId);
 
@@ -243,7 +255,6 @@ public class MedicalRecordService {
         PrescriptionEntity prescription = new PrescriptionEntity();
         prescription.setPatient(patient);
         prescription.setDoctor(doctor);
-        prescription.setMedications(medications);
         prescription.setNotes(notes);
         prescription.setIssueDate(issueDate != null ? issueDate : LocalDate.now());
         prescription.setExpiryDate(expiryDate);
@@ -255,6 +266,28 @@ public class MedicalRecordService {
         }
 
         prescriptionRepository.persist(prescription);
+
+        // Add prescription medications
+        if (medications != null && !medications.isEmpty()) {
+            for (PrescriptionMedicationRequest medRequest : medications) {
+                MedicationEntity medication = medicationRepository.findByIdOptional(medRequest.getMedicationId())
+                        .orElseThrow(() -> new NotFoundException("Medication not found with id: " + medRequest.getMedicationId()));
+
+                PrescriptionMedicationEntity prescriptionMedication = new PrescriptionMedicationEntity();
+                prescriptionMedication.setPrescription(prescription);
+                prescriptionMedication.setMedication(medication);
+                prescriptionMedication.setDose(medRequest.getDose());
+                prescriptionMedication.setFrequency(medRequest.getFrequency());
+                prescriptionMedication.setDuration(medRequest.getDuration());
+                prescriptionMedication.setQuantity(medRequest.getQuantity());
+                prescriptionMedication.setAdministrationRoute(medRequest.getAdministrationRoute());
+                prescriptionMedication.setSpecificIndications(medRequest.getSpecificIndications());
+
+                prescriptionMedicationRepository.persist(prescriptionMedication);
+                prescription.getPrescriptionMedications().add(prescriptionMedication);
+            }
+        }
+
         log.info("Prescription created with id: {}", prescription.getId());
 
         return toPrescriptionDto.apply(prescription);
@@ -308,6 +341,21 @@ public class MedicalRecordService {
                     .version(entity.getVersion())
                     .build();
 
+    public static final Function<PrescriptionMedicationEntity, PrescriptionMedicationDto> toPrescriptionMedicationDto = entity ->
+            PrescriptionMedicationDto.builder()
+                    .medicationId(entity.getMedication().getId())
+                    .medicationName(entity.getMedication().getName())
+                    .medicationCode(entity.getMedication().getCode())
+                    .concentration(entity.getMedication().getConcentration())
+                    .presentation(entity.getMedication().getPresentation())
+                    .dose(entity.getDose())
+                    .frequency(entity.getFrequency())
+                    .duration(entity.getDuration())
+                    .quantity(entity.getQuantity())
+                    .administrationRoute(entity.getAdministrationRoute())
+                    .specificIndications(entity.getSpecificIndications())
+                    .build();
+
     public static final Function<PrescriptionEntity, PrescriptionDto> toPrescriptionDto = entity ->
             PrescriptionDto.builder()
                     .id(entity.getId())
@@ -316,7 +364,10 @@ public class MedicalRecordService {
                     .patientName(entity.getPatient().getFirstName() + " " + entity.getPatient().getLastName())
                     .doctorId(entity.getDoctor().getId())
                     .doctorName(entity.getDoctor().getFirstName() + " " + entity.getDoctor().getLastName())
-                    .medications(entity.getMedications())
+                    .medications(entity.getPrescriptionMedications() != null ?
+                            entity.getPrescriptionMedications().stream()
+                                    .map(toPrescriptionMedicationDto)
+                                    .collect(Collectors.toList()) : null)
                     .notes(entity.getNotes())
                     .issueDate(entity.getIssueDate())
                     .expiryDate(entity.getExpiryDate())

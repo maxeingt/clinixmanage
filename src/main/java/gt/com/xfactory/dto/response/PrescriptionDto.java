@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -23,7 +22,7 @@ public class PrescriptionDto implements Serializable {
     private String patientName;
     private UUID doctorId;
     private String doctorName;
-    private List<Map<String, Object>> medications;
+    private List<PrescriptionMedicationDto> medications;
     private String notes;
     private LocalDate issueDate;
     private LocalDate expiryDate;

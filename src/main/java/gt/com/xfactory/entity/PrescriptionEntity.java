@@ -7,14 +7,12 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Getter
@@ -43,9 +41,8 @@ public class PrescriptionEntity extends PanacheEntityBase implements Serializabl
     @JoinColumn(name = "doctor_id", nullable = false)
     private DoctorEntity doctor;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "medications", nullable = false, columnDefinition = "jsonb")
-    private List<Map<String, Object>> medications;
+    @OneToMany(mappedBy = "prescription", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PrescriptionMedicationEntity> prescriptionMedications = new ArrayList<>();
 
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
