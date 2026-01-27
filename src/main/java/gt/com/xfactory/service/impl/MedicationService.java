@@ -1,5 +1,6 @@
 package gt.com.xfactory.service.impl;
 
+import org.apache.commons.lang3.StringUtils;
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicationRequest;
 import gt.com.xfactory.dto.request.filter.MedicationFilterDto;
@@ -48,6 +49,11 @@ public class MedicationService {
         StringBuilder query = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
         List<String> conditions = new ArrayList<>();
+
+        if (StringUtils.isNotBlank(filter.search)) {
+            conditions.add("(LOWER(name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(activeIngredient) LIKE LOWER(CONCAT('%', :search, '%')))");
+            params.put("search", filter.search);
+        }
 
         QueryUtils.addLikeCondition(filter.name, "name", "name", conditions, params);
         QueryUtils.addLikeCondition(filter.code, "code", "code", conditions, params);

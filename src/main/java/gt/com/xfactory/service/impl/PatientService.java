@@ -31,6 +31,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -79,8 +80,10 @@ public class PatientService {
         Map<String, Object> params = new HashMap<>();
         List<String> conditions = new ArrayList<>();
 
-        QueryUtils.addLikeCondition(filter.name, "firstName", "firstName", conditions, params);
-        QueryUtils.addLikeCondition(filter.name, "lastName", "lastName", conditions, params);
+        if (StringUtils.isNotBlank(filter.name)) {
+            conditions.add("(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))");
+            params.put("name", filter.name);
+        }
         QueryUtils.addLikeCondition(filter.phone, "phone", "phone", conditions, params);
         QueryUtils.addLikeCondition(filter.maritalStatus, "maritalStatus", "maritalStatus", conditions, params);
 

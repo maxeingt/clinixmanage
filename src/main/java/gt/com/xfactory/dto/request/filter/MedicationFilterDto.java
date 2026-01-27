@@ -9,6 +9,9 @@ import java.util.UUID;
 @Data
 public class MedicationFilterDto {
 
+    @QueryParam("search")
+    public String search;
+
     @QueryParam("name")
     public String name;
 
