@@ -6,6 +6,7 @@ import gt.com.xfactory.dto.response.MedicalRecordDto;
 import gt.com.xfactory.dto.response.PrescriptionDto;
 import gt.com.xfactory.dto.response.SpecialtyFormTemplateDto;
 import gt.com.xfactory.service.impl.MedicalRecordService;
+import gt.com.xfactory.service.impl.PdfService;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -32,6 +33,9 @@ public class MedicalRecordController {
 
     @Inject
     MedicalRecordService medicalRecordService;
+
+    @Inject
+    PdfService pdfService;
 
     @GET
     @Path("/patient/{patientId}")
@@ -152,6 +156,17 @@ public class MedicalRecordController {
                 request.getExpiryDate()
         );
         return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @GET
+    @Path("/prescriptions/{id}/pdf")
+    @Produces("application/pdf")
+    public Response getPrescriptionPdf(@PathParam("id") UUID prescriptionId) {
+        PrescriptionDto prescription = medicalRecordService.getPrescriptionById(prescriptionId);
+        byte[] pdf = pdfService.generatePrescriptionPdf(prescription);
+        return Response.ok(pdf, "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"receta-" + prescriptionId + ".pdf\"")
+                .build();
     }
 
     @DELETE

@@ -293,6 +293,14 @@ public class MedicalRecordService {
         return toPrescriptionDto.apply(prescription);
     }
 
+    public PrescriptionDto getPrescriptionById(UUID prescriptionId) {
+        log.info("Fetching prescription by id: {}", prescriptionId);
+
+        return prescriptionRepository.findByIdOptional(prescriptionId)
+                .map(toPrescriptionDto)
+                .orElseThrow(() -> new NotFoundException("Prescription not found with id: " + prescriptionId));
+    }
+
     @Transactional
     public void deletePrescription(UUID prescriptionId) {
         log.info("Deleting prescription: {}", prescriptionId);

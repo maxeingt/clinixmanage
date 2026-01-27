@@ -11,6 +11,7 @@ Sistema de gestión de clínicas médicas.
 - **Seguridad**: Keycloak OIDC
 - **Serialización**: Jackson
 - **Validación**: Hibernate Validator
+- **PDF**: OpenPDF (LibrePDF)
 - **Utilidades**: Lombok, Apache Commons Lang3
 
 ## Configuración
@@ -103,6 +104,7 @@ public class RecursoService { }
 | Clínicas | `/api/v1/clinics` |
 | Especialidades | `/api/v1/specialties` |
 | Expedientes | `/api/v1/medical-records` |
+| Recetas PDF | `/api/v1/medical-records/prescriptions/{id}/pdf` |
 | Usuarios | `/api/v1/users` |
 | Admin | `/api/v1/admin` |
 
@@ -150,3 +152,5 @@ Ejemplo: `feat: agregar CRUD de doctores`
 4. **Filtros**: Usar `QueryUtils.addLikeCondition()` para búsquedas con LIKE.
 
 5. **Transacciones**: Usar `@Transactional` en métodos de servicio que modifican datos.
+
+6. **Generación de PDF**: Usar `PdfService` (`@ApplicationScoped`) para generar PDFs con OpenPDF. Actualmente soporta generación de recetas médicas. Para agregar nuevos tipos de PDF, añadir métodos en este servicio.
