@@ -59,6 +59,20 @@ public class PatientController {
         return patientService.getPatientById(patientId);
     }
 
+    @PUT
+    @Path("/{id}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public PatientDto updatePatient(@PathParam("id") UUID patientId, @Valid PatientRequest request) {
+        return patientService.updatePatient(patientId, request);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deletePatient(@PathParam("id") UUID patientId) {
+        patientService.deletePatient(patientId);
+        return Response.noContent().build();
+    }
+
     @GET
     @Path("/{id}/medical-history-pathological-fam")
     public List<MedicalHistoryPathologicalFamDto> getMedicalHistoryPathologicalFam(@PathParam("id") UUID patientId) {

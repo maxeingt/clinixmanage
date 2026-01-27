@@ -20,7 +20,9 @@ import gt.com.xfactory.repository.ClinicRepository;
 import gt.com.xfactory.repository.DoctorRepository;
 import gt.com.xfactory.repository.MedicalAppointmentRepository;
 import gt.com.xfactory.repository.MedicalHistoryPathologicalFamRepository;
+import gt.com.xfactory.repository.MedicalRecordRepository;
 import gt.com.xfactory.repository.PatientRepository;
+import gt.com.xfactory.repository.PrescriptionRepository;
 import gt.com.xfactory.repository.SpecialtyRepository;
 import jakarta.transaction.Transactional;
 import gt.com.xfactory.utils.QueryUtils;
@@ -60,6 +62,12 @@ public class PatientService {
 
     @Inject
     ClinicRepository clinicRepository;
+
+    @Inject
+    MedicalRecordRepository medicalRecordRepository;
+
+    @Inject
+    PrescriptionRepository prescriptionRepository;
 
     @Inject
     SpecialtyRepository specialtyRepository;
@@ -117,6 +125,46 @@ public class PatientService {
 
         patientRepository.persist(patient);
         log.info("Patient created with id: {}", patient.getId());
+
+        return toDto.apply(patient);
+    }
+
+    @Transactional
+    public PatientDto updatePatient(UUID patientId, PatientRequest request) {
+        log.info("Updating patient: {}", patientId);
+
+        PatientEntity patient = patientRepository.findByIdOptional(patientId)
+                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+
+        patient.setFirstName(request.getFirstName());
+        patient.setLastName(request.getLastName());
+        patient.setBirthdate(request.getBirthdate());
+        patient.setPhone(request.getPhone());
+        patient.setEmail(request.getEmail());
+        patient.setAddress(request.getAddress());
+        patient.setMaritalStatus(request.getMaritalStatus() != null ? request.getMaritalStatus() : "Soltero");
+        patient.setOccupation(request.getOccupation());
+        patient.setEmergencyContactName(request.getEmergencyContactName());
+        patient.setEmergencyContactPhone(request.getEmergencyContactPhone());
+        patient.setAllergies(request.getAllergies());
+        patient.setChronicConditions(request.getChronicConditions());
+        patient.setInsuranceProvider(request.getInsuranceProvider());
+        patient.setInsuranceNumber(request.getInsuranceNumber());
+
+        if (request.getGender() != null && !request.getGender().isBlank()) {
+            try {
+                patient.setGender(GenderType.valueOf(request.getGender().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid gender value: {}", request.getGender());
+            }
+        }
+
+        if (request.getBloodGroup() != null && !request.getBloodGroup().isBlank()) {
+            patient.setBloodGroup(BloodType.fromValue(request.getBloodGroup()));
+        }
+
+        patientRepository.persist(patient);
+        log.info("Patient updated: {}", patientId);
 
         return toDto.apply(patient);
     }
@@ -280,6 +328,37 @@ public class PatientService {
 
         medicalAppointmentRepository.delete(appointment);
         log.info("Medical appointment deleted: {}", appointmentId);
+    }
+
+    @Transactional
+    public void deletePatient(UUID patientId) {
+        log.info("Deleting patient: {}", patientId);
+
+        PatientEntity patient = patientRepository.findByIdOptional(patientId)
+                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+
+        List<String> relatedData = new ArrayList<>();
+
+        if (medicalAppointmentRepository.count("patient.id", patientId) > 0) {
+            relatedData.add("citas médicas");
+        }
+        if (medicalHistoryPathologicalFamRepository.count("patient.id", patientId) > 0) {
+            relatedData.add("historial médico patológico/familiar");
+        }
+        if (medicalRecordRepository.count("patient.id", patientId) > 0) {
+            relatedData.add("expedientes médicos");
+        }
+        if (prescriptionRepository.count("patient.id", patientId) > 0) {
+            relatedData.add("recetas");
+        }
+
+        if (!relatedData.isEmpty()) {
+            throw new IllegalStateException(
+                    "No se puede eliminar el paciente porque tiene datos relacionados: " + String.join(", ", relatedData));
+        }
+
+        patientRepository.delete(patient);
+        log.info("Patient deleted: {}", patientId);
     }
 
     private int calculateAge(LocalDate birthdate) {
