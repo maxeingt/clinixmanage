@@ -131,6 +131,17 @@ public class PatientController {
         return patientService.updateMedicalAppointment(appointmentId, request);
     }
 
+    @PUT
+    @Path("/{id}/appointments/{appointmentId}/reopen")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public MedicalAppointmentDto reopenMedicalAppointment(
+            @PathParam("id") UUID patientId,
+            @PathParam("appointmentId") UUID appointmentId,
+            @Valid MedicalAppointmentRequest request) {
+        request.setPatientId(patientId);
+        return patientService.reopenMedicalAppointment(appointmentId, request);
+    }
+
     @DELETE
     @Path("/{id}/appointments/{appointmentId}")
     public Response deleteMedicalAppointment(

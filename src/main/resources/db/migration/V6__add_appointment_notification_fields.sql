@@ -1,0 +1,2 @@
+ALTER TABLE medical_appointment ADD COLUMN notified_30_min BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE medical_appointment ADD COLUMN notified_10_min BOOLEAN NOT NULL DEFAULT FALSE;

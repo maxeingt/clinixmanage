@@ -58,6 +58,12 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
 
+    @Column(name = "notified_30_min")
+    private boolean notified30Min;
+
+    @Column(name = "notified_10_min")
+    private boolean notified10Min;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

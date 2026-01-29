@@ -323,6 +323,28 @@ public class PatientService {
     }
 
     @Transactional
+    public MedicalAppointmentDto reopenMedicalAppointment(UUID appointmentId, MedicalAppointmentRequest request) {
+        log.info("Reopening medical appointment: {}", appointmentId);
+
+        var appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)
+                .orElseThrow(() -> new NotFoundException("Medical appointment not found with id: " + appointmentId));
+
+        if (appointment.getStatus() != AppointmentStatus.expired) {
+            throw new IllegalStateException("Solo se pueden reabrir citas con estado 'expired'. Estado actual: " + appointment.getStatus());
+        }
+
+        appointment.setStatus(AppointmentStatus.reopened);
+        appointment.setAppointmentDate(request.getAppointmentDate());
+        appointment.setNotified30Min(false);
+        appointment.setNotified10Min(false);
+
+        medicalAppointmentRepository.persist(appointment);
+        log.info("Medical appointment reopened: {}", appointmentId);
+
+        return toMedicalAppointmentDto.apply(appointment);
+    }
+
+    @Transactional
     public void deleteMedicalAppointment(UUID appointmentId) {
         log.info("Deleting medical appointment: {}", appointmentId);
 

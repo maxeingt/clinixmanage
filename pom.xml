@@ -97,6 +97,12 @@
             <artifactId>quarkus-security</artifactId>
         </dependency>
 
+        <!-- Quarkus Scheduler -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-scheduler</artifactId>
+        </dependency>
+
         <!-- OpenPDF for PDF generation -->
         <dependency>
             <groupId>com.github.librepdf</groupId>
