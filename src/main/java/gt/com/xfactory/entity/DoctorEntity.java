@@ -40,4 +40,8 @@ public class DoctorEntity implements Serializable {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true)
+    private UserEntity user;
+
 }

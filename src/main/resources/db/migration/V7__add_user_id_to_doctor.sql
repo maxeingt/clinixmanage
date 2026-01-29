@@ -1,0 +1,1 @@
+ALTER TABLE doctor ADD COLUMN user_id UUID UNIQUE REFERENCES "user"(id);

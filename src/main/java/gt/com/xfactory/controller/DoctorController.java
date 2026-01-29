@@ -35,6 +35,12 @@ public class DoctorController {
     }
 
     @GET
+    @Path("/by-user/{userId}")
+    public DoctorDto getDoctorByUserId(@PathParam("userId") UUID userId) {
+        return doctorService.getDoctorByUserId(userId);
+    }
+
+    @GET
     @Path("/{id}")
     public DoctorDto getDoctorById(@PathParam("id") UUID id) {
         return doctorService.getDoctorById(id);

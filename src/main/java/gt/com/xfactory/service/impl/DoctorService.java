@@ -14,11 +14,13 @@ import gt.com.xfactory.entity.DoctorEntity;
 import gt.com.xfactory.entity.DoctorSpecialtyEntity;
 import gt.com.xfactory.entity.DoctorSpecialtyId;
 import gt.com.xfactory.entity.SpecialtyEntity;
+import gt.com.xfactory.entity.UserEntity;
 import gt.com.xfactory.repository.ClinicRepository;
 import gt.com.xfactory.repository.DoctorClinicRepository;
 import gt.com.xfactory.repository.DoctorRepository;
 import gt.com.xfactory.repository.DoctorSpecialtyRepository;
 import gt.com.xfactory.repository.SpecialtyRepository;
+import gt.com.xfactory.repository.UserRepository;
 import gt.com.xfactory.utils.QueryUtils;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -56,6 +58,9 @@ public class DoctorService {
 
     @Inject
     DoctorClinicRepository doctorClinicRepository;
+
+    @Inject
+    UserRepository userRepository;
 
     public PageResponse<DoctorDto> getDoctors(DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
@@ -126,6 +131,10 @@ public class DoctorService {
         doctor.setPhone(request.getPhone());
         doctor.setCreatedAt(LocalDate.now());
 
+        if (request.getMail() != null) {
+            userRepository.findByEmail(request.getMail()).ifPresent(doctor::setUser);
+        }
+
         doctorRepository.persist(doctor);
         log.info("Doctor created with id: {}", doctor.getId());
 
@@ -146,6 +155,15 @@ public class DoctorService {
         doctor.setEmail(request.getMail());
         doctor.setPhone(request.getPhone());
         doctor.setUpdatedAt(LocalDate.now());
+
+        if (request.getMail() != null) {
+            userRepository.findByEmail(request.getMail()).ifPresentOrElse(
+                    doctor::setUser,
+                    () -> doctor.setUser(null)
+            );
+        } else {
+            doctor.setUser(null);
+        }
 
         doctorRepository.persist(doctor);
 
@@ -320,6 +338,25 @@ public class DoctorService {
         log.info("Clinic removed from doctor successfully");
     }
 
+    public DoctorDto getDoctorByUserId(UUID userId) {
+        log.info("Fetching doctor by userId: {}", userId);
+        DoctorEntity doctor = doctorRepository.find("user.id", userId).firstResultOptional()
+                .orElseThrow(() -> new NotFoundException("Doctor not found for userId: " + userId));
+
+        DoctorDto dto = toDto.apply(doctor);
+        dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId()));
+        dto.setClinics(doctorClinicRepository.findByDoctorId(doctor.getId()).stream()
+                .filter(dc -> dc.getActive() != null && dc.getActive())
+                .map(dc -> ClinicDto.builder()
+                        .id(dc.getClinic().getId())
+                        .name(dc.getClinic().getName())
+                        .address(dc.getClinic().getAddress())
+                        .phone(dc.getClinic().getPhone())
+                        .build())
+                .toList());
+        return dto;
+    }
+
     public static final Function<DoctorEntity, DoctorDto> toDto = entity ->
     {
         int age = 0;
@@ -335,6 +372,7 @@ public class DoctorService {
                 .phone(entity.getPhone())
                 .address(entity.getAddress())
                 .mail(entity.getEmail())
+                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
                 .build();
     };
 }
