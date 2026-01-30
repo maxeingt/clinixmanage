@@ -67,6 +67,10 @@ public class UserService {
     public UserDto createUser(UserRequest request) {
         log.info("Creating user with username: {}", request.getUsername());
 
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+
         String role = request.getRole() != null ? request.getRole() : "user";
 
         // Crear usuario en Keycloak

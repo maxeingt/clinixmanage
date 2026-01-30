@@ -21,7 +21,6 @@ public class UserRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password is required")
     private String password;
 
     private String role;
