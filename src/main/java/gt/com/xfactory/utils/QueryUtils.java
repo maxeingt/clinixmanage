@@ -1,16 +1,10 @@
 package gt.com.xfactory.utils;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Join;
-import org.apache.commons.lang3.StringUtils;
+import jakarta.persistence.*;
+import jakarta.persistence.criteria.*;
+import org.apache.commons.lang3.*;
 
-import java.util.List;
-import java.util.Map;
-import jakarta.persistence.EntityManager;
+import java.util.*;
 
 public class QueryUtils {
 

@@ -1,22 +1,14 @@
 package gt.com.xfactory.service.impl;
 
-import com.lowagie.text.Document;
-import com.lowagie.text.Element;
-import com.lowagie.text.Font;
-import com.lowagie.text.FontFactory;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Phrase;
-import com.lowagie.text.pdf.PdfPCell;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
-import gt.com.xfactory.dto.response.PrescriptionDto;
-import gt.com.xfactory.dto.response.PrescriptionMedicationDto;
-import jakarta.enterprise.context.ApplicationScoped;
-import lombok.extern.slf4j.Slf4j;
+import com.lowagie.text.*;
+import com.lowagie.text.pdf.*;
+import gt.com.xfactory.dto.response.*;
+import jakarta.enterprise.context.*;
+import lombok.extern.slf4j.*;
 
 import java.awt.Color;
-import java.io.ByteArrayOutputStream;
-import java.time.format.DateTimeFormatter;
+import java.io.*;
+import java.time.format.*;
 
 @ApplicationScoped
 @Slf4j

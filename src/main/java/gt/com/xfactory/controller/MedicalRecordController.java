@@ -1,29 +1,16 @@
 package gt.com.xfactory.controller;
 
-import gt.com.xfactory.dto.request.MedicalRecordRequest;
-import gt.com.xfactory.dto.request.PrescriptionRequest;
-import gt.com.xfactory.dto.response.MedicalRecordDto;
-import gt.com.xfactory.dto.response.PrescriptionDto;
-import gt.com.xfactory.dto.response.SpecialtyFormTemplateDto;
-import gt.com.xfactory.service.impl.MedicalRecordService;
-import gt.com.xfactory.service.impl.PdfService;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.service.impl.*;
+import jakarta.annotation.security.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.DELETE;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.POST;
-import jakarta.ws.rs.PUT;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @RequestScoped
 @Path("/api/v1/medical-records")

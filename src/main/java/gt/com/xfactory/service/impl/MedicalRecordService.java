@@ -1,37 +1,20 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.request.PrescriptionMedicationRequest;
-import gt.com.xfactory.dto.response.MedicalRecordDto;
-import gt.com.xfactory.dto.response.PrescriptionDto;
-import gt.com.xfactory.dto.response.PrescriptionMedicationDto;
-import gt.com.xfactory.dto.response.SpecialtyFormTemplateDto;
-import gt.com.xfactory.entity.MedicalRecordEntity;
-import gt.com.xfactory.entity.MedicationEntity;
-import gt.com.xfactory.entity.PrescriptionEntity;
-import gt.com.xfactory.entity.PrescriptionMedicationEntity;
-import gt.com.xfactory.entity.SpecialtyFormTemplateEntity;
-import gt.com.xfactory.entity.enums.MedicalRecordType;
-import gt.com.xfactory.repository.MedicalAppointmentRepository;
-import gt.com.xfactory.repository.MedicalRecordRepository;
-import gt.com.xfactory.repository.MedicationRepository;
-import gt.com.xfactory.repository.PatientRepository;
-import gt.com.xfactory.repository.PrescriptionMedicationRepository;
-import gt.com.xfactory.repository.PrescriptionRepository;
-import gt.com.xfactory.repository.DoctorRepository;
-import gt.com.xfactory.repository.SpecialtyFormTemplateRepository;
-import gt.com.xfactory.repository.SpecialtyRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.entity.enums.*;
+import gt.com.xfactory.repository.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.transaction.*;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.time.*;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 @ApplicationScoped
 @Slf4j

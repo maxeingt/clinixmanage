@@ -1,42 +1,21 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.request.CommonPageRequest;
-import gt.com.xfactory.dto.request.DoctorRequest;
-import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
-import gt.com.xfactory.dto.response.ClinicDto;
-import gt.com.xfactory.dto.response.DoctorDto;
-import gt.com.xfactory.dto.response.PageResponse;
-import gt.com.xfactory.dto.response.SpecialtyDto;
-import gt.com.xfactory.entity.ClinicEntity;
-import gt.com.xfactory.entity.DoctorClinicEntity;
-import gt.com.xfactory.entity.DoctorClinicId;
-import gt.com.xfactory.entity.DoctorEntity;
-import gt.com.xfactory.entity.DoctorSpecialtyEntity;
-import gt.com.xfactory.entity.DoctorSpecialtyId;
-import gt.com.xfactory.entity.SpecialtyEntity;
-import gt.com.xfactory.entity.UserEntity;
-import gt.com.xfactory.repository.ClinicRepository;
-import gt.com.xfactory.repository.DoctorClinicRepository;
-import gt.com.xfactory.repository.DoctorRepository;
-import gt.com.xfactory.repository.DoctorSpecialtyRepository;
-import gt.com.xfactory.repository.SpecialtyRepository;
-import gt.com.xfactory.repository.UserRepository;
-import gt.com.xfactory.utils.QueryUtils;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.transaction.*;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
+import java.time.*;
+import java.util.*;
+import java.util.function.*;
 
 import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
@@ -61,6 +40,9 @@ public class DoctorService {
 
     @Inject
     UserRepository userRepository;
+
+    @Inject
+    MedicalAppointmentRepository medicalAppointmentRepository;
 
     public PageResponse<DoctorDto> getDoctors(DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
@@ -187,6 +169,17 @@ public class DoctorService {
 
         DoctorEntity doctor = doctorRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + id));
+
+        List<String> relatedData = new ArrayList<>();
+
+        if (medicalAppointmentRepository.count("doctor.id", id) > 0) {
+            relatedData.add("citas médicas");
+        }
+
+        if (!relatedData.isEmpty()) {
+            throw new IllegalStateException(
+                    "No se puede eliminar el doctor porque tiene datos relacionados: " + String.join(", ", relatedData));
+        }
 
         // Delete doctor specialties first
         doctorSpecialtyRepository.deleteByDoctorId(id);
