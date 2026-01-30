@@ -32,6 +32,9 @@ public class UserEntity extends PanacheEntityBase implements Serializable {
     @Column(name = "role", length = 20)
     private String role = "user";
 
+    @Column(name = "active", nullable = false)
+    private Boolean active = true;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

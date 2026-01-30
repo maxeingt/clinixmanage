@@ -56,11 +56,10 @@ public class UserController {
         return userService.updateUser(id, request);
     }
 
-    @DELETE
-    @Path("/{id}")
-    public Response deleteUser(@PathParam("id") UUID id) {
-        userService.deleteUser(id);
-        return Response.noContent().build();
+    @PATCH
+    @Path("/{id}/toggle-status")
+    public UserDto toggleUserStatus(@PathParam("id") UUID id) {
+        return userService.toggleUserStatus(id);
     }
 
     // ============ Clinic Permissions Endpoints ============

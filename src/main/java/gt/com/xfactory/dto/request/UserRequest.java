@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UserRequest {
-    @NotBlank(message = "Keycloak ID is required")
     private String keycloakId;
 
     @NotBlank(message = "Username is required")
@@ -21,6 +20,9 @@ public class UserRequest {
     @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     private String email;
+
+    @NotBlank(message = "Password is required")
+    private String password;
 
     private String role;
 }

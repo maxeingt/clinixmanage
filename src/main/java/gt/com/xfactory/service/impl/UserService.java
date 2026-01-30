@@ -39,6 +39,9 @@ public class UserService {
     @Inject
     DoctorRepository doctorRepository;
 
+    @Inject
+    KeycloakAdminService keycloakAdminService;
+
     public List<UserDto> getAllUsers() {
         log.info("Fetching all users");
         return userRepository.listAll().stream()
@@ -64,14 +67,21 @@ public class UserService {
     public UserDto createUser(UserRequest request) {
         log.info("Creating user with username: {}", request.getUsername());
 
+        String role = request.getRole() != null ? request.getRole() : "user";
+
+        // Crear usuario en Keycloak
+        String keycloakId = keycloakAdminService.createUser(
+                request.getUsername(), request.getEmail(), request.getPassword(), role);
+
+        // Crear usuario en BD local
         UserEntity user = new UserEntity();
-        user.setKeycloakId(request.getKeycloakId());
+        user.setKeycloakId(keycloakId);
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setRole(request.getRole() != null ? request.getRole() : "user");
+        user.setRole(role);
 
         userRepository.persist(user);
-        log.info("User created with id: {}", user.getId());
+        log.info("User created with id: {} and keycloakId: {}", user.getId(), keycloakId);
 
         return toDto.apply(user);
     }
@@ -102,13 +112,23 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteUser(UUID id) {
-        log.info("Deleting user with id: {}", id);
+    public UserDto toggleUserStatus(UUID id) {
+        log.info("Toggling user status with id: {}", id);
 
         UserEntity user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
-        userRepository.delete(user);
+        boolean newStatus = !Boolean.TRUE.equals(user.getActive());
+        user.setActive(newStatus);
+
+        if (newStatus) {
+            keycloakAdminService.enableUser(user.getKeycloakId());
+        } else {
+            keycloakAdminService.disableUser(user.getKeycloakId());
+        }
+
+        log.info("User {} {}", id, newStatus ? "activado" : "desactivado");
+        return toDto.apply(user);
     }
 
     // ============ Clinic Permissions ============
@@ -210,6 +230,7 @@ public class UserService {
             .username(user.getUsername())
             .email(user.getEmail())
             .role(user.getRole())
+            .active(user.getActive())
             .createdAt(user.getCreatedAt())
             .updatedAt(user.getUpdatedAt())
             .build();

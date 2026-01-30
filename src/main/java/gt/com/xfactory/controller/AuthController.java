@@ -56,7 +56,19 @@ public class AuthController {
             user = createUserFromToken(keycloakId);
             log.info("Usuario creado: {} con rol {}", user.getUsername(), user.getRole());
         } else {
-            // Usuario existe, sincronizar rol desde Keycloak
+            // Usuario existe, sincronizar datos desde Keycloak
+            String tokenEmail = jwt.getClaim("email");
+            String tokenUsername = jwt.getClaim("preferred_username");
+
+            if (tokenEmail != null && !tokenEmail.equals(user.getEmail())) {
+                log.info("Sincronizando email de {} a {}", user.getEmail(), tokenEmail);
+                user.setEmail(tokenEmail);
+            }
+            if (tokenUsername != null && !tokenUsername.equals(user.getUsername())) {
+                log.info("Sincronizando username de {} a {}", user.getUsername(), tokenUsername);
+                user.setUsername(tokenUsername);
+            }
+
             String currentRole = determineRole(extractAllRoles());
             if (!currentRole.equals(user.getRole())) {
                 log.info("Actualizando rol de {} de {} a {}", user.getUsername(), user.getRole(), currentRole);
@@ -142,6 +154,7 @@ public class AuthController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .active(user.getActive())
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .build();
