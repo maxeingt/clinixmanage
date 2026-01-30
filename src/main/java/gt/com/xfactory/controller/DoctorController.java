@@ -48,6 +48,7 @@ public class DoctorController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Response createDoctor(@Valid DoctorRequest request) {
         DoctorDto created = doctorService.createDoctor(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -56,12 +57,14 @@ public class DoctorController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public DoctorDto updateDoctor(@PathParam("id") UUID id, @Valid DoctorRequest request) {
         return doctorService.updateDoctor(id, request);
     }
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed("admin")
     public Response deleteDoctor(@PathParam("id") UUID id) {
         doctorService.deleteDoctor(id);
         return Response.noContent().build();
@@ -77,6 +80,7 @@ public class DoctorController {
 
     @POST
     @Path("/{doctorId}/specialties/{specialtyId}")
+    @RolesAllowed("admin")
     public Response addSpecialtyToDoctor(
             @PathParam("doctorId") UUID doctorId,
             @PathParam("specialtyId") UUID specialtyId) {
@@ -86,6 +90,7 @@ public class DoctorController {
 
     @DELETE
     @Path("/{doctorId}/specialties/{specialtyId}")
+    @RolesAllowed("admin")
     public Response removeSpecialtyFromDoctor(
             @PathParam("doctorId") UUID doctorId,
             @PathParam("specialtyId") UUID specialtyId) {
@@ -103,6 +108,7 @@ public class DoctorController {
 
     @POST
     @Path("/{doctorId}/clinics/{clinicId}")
+    @RolesAllowed("admin")
     public Response addClinicToDoctor(
             @PathParam("doctorId") UUID doctorId,
             @PathParam("clinicId") UUID clinicId) {
@@ -112,6 +118,7 @@ public class DoctorController {
 
     @DELETE
     @Path("/{doctorId}/clinics/{clinicId}")
+    @RolesAllowed("admin")
     public Response removeClinicFromDoctor(
             @PathParam("doctorId") UUID doctorId,
             @PathParam("clinicId") UUID clinicId) {

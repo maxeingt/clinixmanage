@@ -44,6 +44,7 @@ public class MedicalRecordController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin", "doctor"})
     public Response createMedicalRecord(@Valid MedicalRecordRequest request) {
         MedicalRecordDto created = medicalRecordService.createMedicalRecord(
                 request.getPatientId(),
@@ -66,6 +67,7 @@ public class MedicalRecordController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin", "doctor"})
     public MedicalRecordDto updateMedicalRecord(
             @PathParam("id") UUID recordId,
             @Valid MedicalRecordRequest request) {
@@ -84,6 +86,7 @@ public class MedicalRecordController {
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed({"admin", "doctor"})
     public Response deleteMedicalRecord(@PathParam("id") UUID recordId) {
         medicalRecordService.deleteMedicalRecord(recordId);
         return Response.noContent().build();
@@ -132,6 +135,7 @@ public class MedicalRecordController {
     @POST
     @Path("/prescriptions")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin", "doctor"})
     public Response createPrescription(@Valid PrescriptionRequest request) {
         PrescriptionDto created = medicalRecordService.createPrescription(
                 request.getPatientId(),
@@ -158,6 +162,7 @@ public class MedicalRecordController {
 
     @DELETE
     @Path("/prescriptions/{id}")
+    @RolesAllowed({"admin", "doctor"})
     public Response deletePrescription(@PathParam("id") UUID prescriptionId) {
         medicalRecordService.deletePrescription(prescriptionId);
         return Response.noContent().build();

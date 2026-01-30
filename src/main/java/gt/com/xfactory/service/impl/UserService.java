@@ -1,13 +1,7 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.request.AssignClinicPermissionRequest;
 import gt.com.xfactory.dto.request.UserRequest;
-import gt.com.xfactory.dto.response.UserClinicPermissionDto;
 import gt.com.xfactory.dto.response.UserDto;
-import gt.com.xfactory.entity.ClinicEntity;
-import gt.com.xfactory.entity.RoleTemplateEntity;
-import gt.com.xfactory.entity.UserClinicPermissionEntity;
-import gt.com.xfactory.entity.UserClinicPermissionId;
 import gt.com.xfactory.entity.UserEntity;
 import gt.com.xfactory.repository.*;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -26,15 +20,6 @@ public class UserService {
 
     @Inject
     UserRepository userRepository;
-
-    @Inject
-    UserClinicPermissionRepository userClinicPermissionRepository;
-
-    @Inject
-    ClinicRepository clinicRepository;
-
-    @Inject
-    RoleTemplateRepository roleTemplateRepository;
 
     @Inject
     DoctorRepository doctorRepository;
@@ -135,97 +120,6 @@ public class UserService {
         return toDto.apply(user);
     }
 
-    // ============ Clinic Permissions ============
-
-    public List<UserClinicPermissionDto> getUserClinicPermissions(UUID userId) {
-        log.info("Fetching clinic permissions for user: {}", userId);
-
-        // Verify user exists
-        userRepository.findByIdOptional(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        return userClinicPermissionRepository.findByUserId(userId).stream()
-                .map(toPermissionDto)
-                .toList();
-    }
-
-    @Transactional
-    public UserClinicPermissionDto assignClinicPermission(UUID userId, AssignClinicPermissionRequest request) {
-        log.info("Assigning clinic {} to user {}", request.getClinicId(), userId);
-
-        UserEntity user = userRepository.findByIdOptional(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with id: " + userId));
-
-        ClinicEntity clinic = clinicRepository.findByIdOptional(request.getClinicId())
-                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + request.getClinicId()));
-
-        // Check if permission already exists
-        var existingPermission = userClinicPermissionRepository
-                .findByUserIdAndClinicId(userId, request.getClinicId());
-
-        UserClinicPermissionEntity permission;
-        if (existingPermission.isPresent()) {
-            // Update existing permission
-            permission = existingPermission.get();
-            log.info("Updating existing permission for user {} and clinic {}", userId, request.getClinicId());
-        } else {
-            // Create new permission
-            permission = new UserClinicPermissionEntity();
-            permission.setId(new UserClinicPermissionId(userId, request.getClinicId()));
-            permission.setUser(user);
-            permission.setClinic(clinic);
-        }
-
-        // Si se proporciona un roleTemplateId, usar los permisos de la plantilla
-        if (request.getRoleTemplateId() != null) {
-            RoleTemplateEntity roleTemplate = roleTemplateRepository.findByIdOptional(request.getRoleTemplateId())
-                    .orElseThrow(() -> new NotFoundException("Role template not found with id: " + request.getRoleTemplateId()));
-
-            permission.setRoleTemplate(roleTemplate);
-            permission.setAdminPatients(roleTemplate.getAdminPatients());
-            permission.setAdminDoctors(roleTemplate.getAdminDoctors());
-            permission.setAdminAppointments(roleTemplate.getAdminAppointments());
-            permission.setAdminClinics(roleTemplate.getAdminClinics());
-            permission.setAdminUsers(roleTemplate.getAdminUsers());
-            permission.setAdminSpecialties(roleTemplate.getAdminSpecialties());
-            permission.setManageAssignments(roleTemplate.getManageAssignments());
-            permission.setViewMedicalRecords(roleTemplate.getViewMedicalRecords());
-            log.info("Applying role template: {}", roleTemplate.getName());
-        } else {
-            // Usar permisos individuales del request
-            permission.setAdminPatients(request.getAdminPatients());
-            permission.setAdminDoctors(request.getAdminDoctors());
-            permission.setAdminAppointments(request.getAdminAppointments());
-            permission.setAdminClinics(request.getAdminClinics());
-            permission.setAdminUsers(request.getAdminUsers());
-            permission.setAdminSpecialties(request.getAdminSpecialties());
-            permission.setManageAssignments(request.getManageAssignments());
-            permission.setViewMedicalRecords(request.getViewMedicalRecords());
-        }
-
-        userClinicPermissionRepository.persist(permission);
-        log.info("Clinic permission assigned successfully");
-
-        return toPermissionDto.apply(permission);
-    }
-
-    @Transactional
-    public void revokeClinicPermission(UUID userId, UUID clinicId) {
-        log.info("Revoking clinic {} permission from user {}", clinicId, userId);
-
-        UserClinicPermissionEntity permission = userClinicPermissionRepository
-                .findByUserIdAndClinicId(userId, clinicId)
-                .orElseThrow(() -> new NotFoundException(
-                        "Permission not found for user " + userId + " and clinic " + clinicId));
-
-        userClinicPermissionRepository.delete(permission);
-        log.info("Clinic permission revoked successfully");
-    }
-
-    public boolean hasAccessToClinic(UUID userId, UUID clinicId) {
-        return userClinicPermissionRepository.hasAccessToClinic(userId, clinicId);
-    }
-
     // ============ Mappers ============
 
     public static final Function<UserEntity, UserDto> toDto = user -> UserDto.builder()
@@ -238,22 +132,4 @@ public class UserService {
             .createdAt(user.getCreatedAt())
             .updatedAt(user.getUpdatedAt())
             .build();
-
-    public static final Function<UserClinicPermissionEntity, UserClinicPermissionDto> toPermissionDto =
-            permission -> UserClinicPermissionDto.builder()
-                    .userId(permission.getId().getUserId())
-                    .clinicId(permission.getId().getClinicId())
-                    .clinicName(permission.getClinic() != null ? permission.getClinic().getName() : null)
-                    .adminPatients(permission.getAdminPatients())
-                    .adminDoctors(permission.getAdminDoctors())
-                    .adminAppointments(permission.getAdminAppointments())
-                    .adminClinics(permission.getAdminClinics())
-                    .adminUsers(permission.getAdminUsers())
-                    .adminSpecialties(permission.getAdminSpecialties())
-                    .manageAssignments(permission.getManageAssignments())
-                    .viewMedicalRecords(permission.getViewMedicalRecords())
-                    .roleTemplateId(permission.getRoleTemplate() != null ? permission.getRoleTemplate().getId() : null)
-                    .roleTemplateName(permission.getRoleTemplate() != null ? permission.getRoleTemplate().getName() : null)
-                    .createdAt(permission.getCreatedAt())
-                    .build();
 }

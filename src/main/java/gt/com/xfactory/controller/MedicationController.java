@@ -53,6 +53,7 @@ public class MedicationController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Response create(@Valid MedicationRequest request) {
         MedicationDto created = medicationService.create(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -61,12 +62,14 @@ public class MedicationController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public MedicationDto update(@PathParam("id") UUID id, @Valid MedicationRequest request) {
         return medicationService.update(id, request);
     }
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed("admin")
     public Response delete(@PathParam("id") UUID id) {
         medicationService.delete(id);
         return Response.noContent().build();

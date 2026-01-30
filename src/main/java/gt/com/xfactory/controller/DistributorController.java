@@ -47,6 +47,7 @@ public class DistributorController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Response create(@Valid DistributorRequest request) {
         DistributorDto created = distributorService.create(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -55,12 +56,14 @@ public class DistributorController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public DistributorDto update(@PathParam("id") UUID id, @Valid DistributorRequest request) {
         return distributorService.update(id, request);
     }
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed("admin")
     public Response delete(@PathParam("id") UUID id) {
         distributorService.delete(id);
         return Response.noContent().build();

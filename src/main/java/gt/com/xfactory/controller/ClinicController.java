@@ -41,6 +41,7 @@ public class ClinicController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Response createClinic(@Valid ClinicRequest request) {
         ClinicDto created = clinicService.createClinic(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -49,12 +50,14 @@ public class ClinicController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public ClinicDto updateClinic(@PathParam("id") UUID id, @Valid ClinicRequest request) {
         return clinicService.updateClinic(id, request);
     }
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed("admin")
     public Response deleteClinic(@PathParam("id") UUID id) {
         clinicService.deleteClinic(id);
         return Response.noContent().build();
