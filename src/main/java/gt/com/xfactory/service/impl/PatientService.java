@@ -288,6 +288,8 @@ public class PatientService {
         var appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Medical appointment not found with id: " + appointmentId));
 
+        validateModifiable(appointment);
+
         var patient = patientRepository.findByIdOptional(request.getPatientId())
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
 
@@ -351,6 +353,8 @@ public class PatientService {
 
         var appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Medical appointment not found with id: " + appointmentId));
+
+        validateModifiable(appointment);
 
         medicalAppointmentRepository.delete(appointment);
         log.info("Medical appointment deleted: {}", appointmentId);
@@ -424,6 +428,19 @@ public class PatientService {
                     .medicalHistoryType(entity.getMedicalHistoryType())
                     .description(entity.getDescription())
                     .build();
+
+    private static final java.util.Set<AppointmentStatus> MODIFIABLE_STATUSES = java.util.Set.of(
+            AppointmentStatus.scheduled,
+            AppointmentStatus.confirmed,
+            AppointmentStatus.reopened
+    );
+
+    private void validateModifiable(MedicalAppointmentEntity appointment) {
+        if (!MODIFIABLE_STATUSES.contains(appointment.getStatus())) {
+            throw new IllegalStateException(
+                    "No se puede modificar una cita con estado '" + appointment.getStatus() + "'. Solo se permiten: scheduled, confirmed, reopened");
+        }
+    }
 
     public static final Function<MedicalAppointmentEntity, MedicalAppointmentDto> toMedicalAppointmentDto = entity ->
             MedicalAppointmentDto.builder()
