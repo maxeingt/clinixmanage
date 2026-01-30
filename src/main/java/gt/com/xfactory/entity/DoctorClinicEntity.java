@@ -2,10 +2,12 @@ package gt.com.xfactory.entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.envers.Audited;
+
 import java.time.LocalDateTime;
 
+@Audited
 @Entity
 @Table(name = "doctor_clinic")
 @Getter

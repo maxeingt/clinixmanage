@@ -3,11 +3,8 @@ package gt.com.xfactory.entity;
 import gt.com.xfactory.entity.enums.AppointmentStatus;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.envers.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -16,6 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
+@Audited
 @Entity
 @Table(name = "medical_appointment")
 @AllArgsConstructor
@@ -39,6 +37,7 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @JoinColumn(name = "clinic_id", nullable = false)
     private ClinicEntity clinic;
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialty_id")
     private SpecialtyEntity specialty;

@@ -4,10 +4,8 @@ import gt.com.xfactory.entity.enums.BloodType;
 import gt.com.xfactory.entity.enums.GenderType;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.AllArgsConstructor;
+import lombok.*;
+import org.hibernate.envers.Audited;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
@@ -18,6 +16,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
+@Audited
 @Entity
 @Table(name = "patient")
 @AllArgsConstructor

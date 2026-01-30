@@ -3,11 +3,8 @@ package gt.com.xfactory.entity;
 import gt.com.xfactory.entity.enums.MedicalRecordType;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.envers.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -19,6 +16,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
+@Audited
 @Entity
 @Table(name = "medical_record")
 @AllArgsConstructor
@@ -38,6 +36,7 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     @JoinColumn(name = "appointment_id")
     private MedicalAppointmentEntity appointment;
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "specialty_id")
     private SpecialtyEntity specialty;
@@ -73,6 +72,7 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     private Map<String, Object> specialtyData;
 
     @JdbcTypeCode(SqlTypes.JSON)
+    @NotAudited
     @Column(name = "attachments", columnDefinition = "jsonb")
     private Object attachments;
 

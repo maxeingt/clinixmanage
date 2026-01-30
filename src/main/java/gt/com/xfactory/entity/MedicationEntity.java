@@ -3,11 +3,8 @@ package gt.com.xfactory.entity;
 import gt.com.xfactory.entity.enums.PresentationType;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.envers.*;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -17,6 +14,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
+@Audited
 @Entity
 @Table(name = "medication")
 @AllArgsConstructor
@@ -58,10 +56,12 @@ public class MedicationEntity extends PanacheEntityBase implements Serializable 
     @Column(name = "active", nullable = false)
     private Boolean active = true;
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pharmaceutical_id")
     private PharmaceuticalEntity pharmaceutical;
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "distributor_id")
     private DistributorEntity distributor;

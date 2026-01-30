@@ -3,6 +3,7 @@ package gt.com.xfactory.entity;
 import gt.com.xfactory.dto.request.LocalDateAdapter;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.envers.*;
 
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import java.io.Serializable;
@@ -12,6 +13,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @ToString
+@Audited
 @Entity
 @Table(name = "doctor")
 @AllArgsConstructor
@@ -40,6 +42,7 @@ public class DoctorEntity implements Serializable {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
     private UserEntity user;

@@ -3,6 +3,7 @@ package gt.com.xfactory.service.impl;
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
 import gt.com.xfactory.dto.request.MedicalHistoryPathologicalFamRequest;
+import gt.com.xfactory.dto.request.ReopenAppointmentRequest;
 import gt.com.xfactory.dto.request.PatientRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
@@ -323,7 +324,7 @@ public class PatientService {
     }
 
     @Transactional
-    public MedicalAppointmentDto reopenMedicalAppointment(UUID appointmentId, MedicalAppointmentRequest request) {
+    public MedicalAppointmentDto reopenMedicalAppointment(UUID appointmentId, ReopenAppointmentRequest request) {
         log.info("Reopening medical appointment: {}", appointmentId);
 
         var appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)

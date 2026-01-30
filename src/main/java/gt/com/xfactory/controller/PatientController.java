@@ -3,6 +3,7 @@ package gt.com.xfactory.controller;
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.dto.request.MedicalAppointmentRequest;
 import gt.com.xfactory.dto.request.MedicalHistoryPathologicalFamRequest;
+import gt.com.xfactory.dto.request.ReopenAppointmentRequest;
 import gt.com.xfactory.dto.request.PatientRequest;
 import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
 import gt.com.xfactory.dto.request.filter.PatientFilterDto;
@@ -137,8 +138,7 @@ public class PatientController {
     public MedicalAppointmentDto reopenMedicalAppointment(
             @PathParam("id") UUID patientId,
             @PathParam("appointmentId") UUID appointmentId,
-            @Valid MedicalAppointmentRequest request) {
-        request.setPatientId(patientId);
+            @Valid ReopenAppointmentRequest request) {
         return patientService.reopenMedicalAppointment(appointmentId, request);
     }
 
