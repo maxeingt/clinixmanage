@@ -9,10 +9,7 @@ import gt.com.xfactory.entity.RoleTemplateEntity;
 import gt.com.xfactory.entity.UserClinicPermissionEntity;
 import gt.com.xfactory.entity.UserClinicPermissionId;
 import gt.com.xfactory.entity.UserEntity;
-import gt.com.xfactory.repository.ClinicRepository;
-import gt.com.xfactory.repository.RoleTemplateRepository;
-import gt.com.xfactory.repository.UserClinicPermissionRepository;
-import gt.com.xfactory.repository.UserRepository;
+import gt.com.xfactory.repository.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -38,6 +35,9 @@ public class UserService {
 
     @Inject
     RoleTemplateRepository roleTemplateRepository;
+
+    @Inject
+    DoctorRepository doctorRepository;
 
     public List<UserDto> getAllUsers() {
         log.info("Fetching all users");
@@ -83,6 +83,7 @@ public class UserService {
         UserEntity user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
+        String oldEmail = user.getEmail();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         if (request.getRole() != null) {
@@ -90,6 +91,13 @@ public class UserService {
         }
 
         userRepository.persist(user);
+
+        // Sincronizar email en doctor vinculado
+        if (request.getEmail() != null && !request.getEmail().equals(oldEmail)) {
+            doctorRepository.find("user.id", id).firstResultOptional()
+                    .ifPresent(doctor -> doctor.setEmail(request.getEmail()));
+        }
+
         return toDto.apply(user);
     }
 

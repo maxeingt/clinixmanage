@@ -138,6 +138,12 @@ public class DoctorService {
         doctor.setPhone(request.getPhone());
         doctor.setUpdatedAt(LocalDate.now());
 
+        // Sincronizar email en usuario vinculado
+        if (doctor.getUser() != null && request.getMail() != null
+                && !request.getMail().equals(doctor.getUser().getEmail())) {
+            doctor.getUser().setEmail(request.getMail());
+        }
+
         if (request.getMail() != null) {
             userRepository.findByEmail(request.getMail()).ifPresentOrElse(
                     doctor::setUser,
