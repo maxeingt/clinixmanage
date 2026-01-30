@@ -84,7 +84,10 @@ public class KeycloakAdminService {
                 log.info("Usuario creado en Keycloak con id: {}", keycloakId);
 
                 try {
-                    assignRealmRole(keycloakId, role);
+                    assignRealmRole(keycloakId, "user");
+                    if (role != null && !role.isBlank() && !role.equalsIgnoreCase("user")) {
+                        assignRealmRole(keycloakId, role);
+                    }
                 } catch (Exception e) {
                     // Rollback: eliminar usuario de Keycloak si falla la asignación de rol
                     getUsersResource().delete(keycloakId);
