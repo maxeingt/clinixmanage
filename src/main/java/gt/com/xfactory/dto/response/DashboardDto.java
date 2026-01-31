@@ -14,7 +14,7 @@ public class DashboardDto implements Serializable {
     private long todayPending;
     private long todayCancelled;
     private long todayNoShow;
-    private long totalPatients;
+    private long weeklyPatientsAttended;
     private long monthlyAppointments;
     private long monthlyCancellations;
 }

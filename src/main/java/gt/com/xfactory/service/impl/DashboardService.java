@@ -3,13 +3,14 @@ package gt.com.xfactory.service.impl;
 import gt.com.xfactory.dto.response.DashboardDto;
 import gt.com.xfactory.entity.enums.AppointmentStatus;
 import gt.com.xfactory.repository.MedicalAppointmentRepository;
-import gt.com.xfactory.repository.PatientRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 
 @ApplicationScoped
@@ -18,9 +19,6 @@ public class DashboardService {
 
     @Inject
     MedicalAppointmentRepository medicalAppointmentRepository;
-
-    @Inject
-    PatientRepository patientRepository;
 
     public DashboardDto getDashboardMetrics(UUID clinicId, UUID doctorId) {
         LocalDate today = LocalDate.now();
@@ -57,7 +55,11 @@ public class DashboardService {
                         + " and appointmentDate >= :startOfDay and appointmentDate < :endOfDay and status = :status",
                 merge(baseParams, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay, "status", AppointmentStatus.no_show)));
 
-        long totalPatients = patientRepository.count();
+        LocalDateTime startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
+        LocalDateTime endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)).plusDays(1).atStartOfDay();
+
+        long weeklyPatientsAttended = countDistinctPatients(baseFilter,
+                merge(baseParams, Map.of("startOfWeek", startOfWeek, "endOfWeek", endOfWeek, "status", AppointmentStatus.completed)));
 
         long monthlyAppointments = countAppointments(baseFilter
                         + " and appointmentDate >= :startOfMonth and appointmentDate < :endOfMonth",
@@ -73,7 +75,7 @@ public class DashboardService {
                 .todayPending(todayPending)
                 .todayCancelled(todayCancelled)
                 .todayNoShow(todayNoShow)
-                .totalPatients(totalPatients)
+                .weeklyPatientsAttended(weeklyPatientsAttended)
                 .monthlyAppointments(monthlyAppointments)
                 .monthlyCancellations(monthlyCancellations)
                 .build();
@@ -99,6 +101,15 @@ public class DashboardService {
             params.put("doctorId", doctorId);
         }
         return params;
+    }
+
+    private long countDistinctPatients(String baseFilter, Map<String, Object> params) {
+        String jpql = "select count(distinct m.patient.id) from MedicalAppointmentEntity m where "
+                + baseFilter.replace("clinic.", "m.clinic.").replace("doctor.", "m.doctor.")
+                + " and m.appointmentDate >= :startOfWeek and m.appointmentDate < :endOfWeek and m.status = :status";
+        var query = medicalAppointmentRepository.getEntityManager().createQuery(jpql, Long.class);
+        params.forEach(query::setParameter);
+        return query.getSingleResult();
     }
 
     private long countAppointments(String query, Map<String, Object> params) {
