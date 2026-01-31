@@ -17,6 +17,8 @@ public class UserDto implements Serializable {
     private UUID id;
     private String keycloakId;
     private String username;
+    private String firstName;
+    private String lastName;
     private String email;
     private String role;
     private Boolean active;

@@ -66,6 +66,8 @@ public class UserService {
         UserEntity user = new UserEntity();
         user.setKeycloakId(keycloakId);
         user.setUsername(request.getUsername());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setRole(role);
 
@@ -84,6 +86,8 @@ public class UserService {
 
         String oldEmail = user.getEmail();
         user.setUsername(request.getUsername());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         if (request.getRole() != null) {
             user.setRole(request.getRole());
@@ -135,6 +139,8 @@ public class UserService {
             .id(user.getId())
             .keycloakId(user.getKeycloakId())
             .username(user.getUsername())
+            .firstName(user.getFirstName())
+            .lastName(user.getLastName())
             .email(user.getEmail())
             .role(user.getRole())
             .active(user.getActive())
