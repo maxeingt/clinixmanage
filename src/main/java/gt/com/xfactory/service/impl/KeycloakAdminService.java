@@ -1,21 +1,19 @@
 package gt.com.xfactory.service.impl;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import jakarta.enterprise.context.ApplicationScoped;
-import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.UsersResource;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
+import jakarta.annotation.*;
+import jakarta.enterprise.context.*;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
+import lombok.extern.slf4j.*;
+import org.eclipse.microprofile.config.inject.*;
+import org.keycloak.admin.client.*;
+import org.keycloak.admin.client.resource.*;
+import org.keycloak.representations.idm.*;
 
-import jakarta.ws.rs.core.Response;
-import java.util.Collections;
-import java.util.List;
+import java.net.*;
+import java.net.http.*;
+import java.nio.charset.*;
+import java.util.*;
 
 @ApplicationScoped
 @Slf4j
@@ -32,6 +30,12 @@ public class KeycloakAdminService {
 
     @ConfigProperty(name = "keycloak.admin.client-secret")
     String clientSecret;
+
+    @ConfigProperty(name = "quarkus.oidc.client-id")
+    String oidcClientId;
+
+    @ConfigProperty(name = "quarkus.oidc.credentials.secret")
+    String oidcClientSecret;
 
     private Keycloak keycloak;
 
@@ -131,6 +135,53 @@ public class KeycloakAdminService {
         } catch (Exception e) {
             log.error("Error activando usuario en Keycloak: {}", keycloakId, e);
             throw new IllegalStateException("Error activando usuario en Keycloak", e);
+        }
+    }
+
+    public void changePassword(String keycloakId, String oldPassword, String newPassword) {
+        UserRepresentation user = getUsersResource().get(keycloakId).toRepresentation();
+        String username = user.getUsername();
+
+        // Validar el password actual via token endpoint
+        validateCurrentPassword(username, oldPassword);
+
+        // Cambiar el password
+        CredentialRepresentation credential = new CredentialRepresentation();
+        credential.setType(CredentialRepresentation.PASSWORD);
+        credential.setValue(newPassword);
+        credential.setTemporary(false);
+        getUsersResource().get(keycloakId).resetPassword(credential);
+        log.info("Password actualizado en Keycloak para usuario: {}", keycloakId);
+    }
+
+    private void validateCurrentPassword(String username, String password) {
+        String tokenUrl = serverUrl + "/realms/" + realm + "/protocol/openid-connect/token";
+
+        try {
+            HttpClient httpClient = HttpClient.newHttpClient();
+            String formData = "grant_type=password"
+                    + "&client_id=" + URLEncoder.encode(oidcClientId, StandardCharsets.UTF_8)
+                    + "&client_secret=" + URLEncoder.encode(oidcClientSecret, StandardCharsets.UTF_8)
+                    + "&username=" + URLEncoder.encode(username, StandardCharsets.UTF_8)
+                    + "&password=" + URLEncoder.encode(password, StandardCharsets.UTF_8);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(tokenUrl))
+                    .header("Content-Type", "application/x-www-form-urlencoded")
+                    .POST(HttpRequest.BodyPublishers.ofString(formData))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                log.warn("Validación de password actual fallida para usuario: {}", username);
+                throw new BadRequestException("El password actual es incorrecto");
+            }
+        } catch (BadRequestException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Error validando password contra Keycloak", e);
+            throw new IllegalStateException("Error validando credenciales contra Keycloak", e);
         }
     }
 

@@ -1,5 +1,6 @@
 package gt.com.xfactory.controller;
 
+import gt.com.xfactory.dto.request.ChangePasswordRequest;
 import gt.com.xfactory.dto.request.UserRequest;
 import gt.com.xfactory.dto.response.UserDto;
 import gt.com.xfactory.service.impl.UserService;
@@ -17,13 +18,14 @@ import java.util.UUID;
 @RequestScoped
 @Path("/api/v1/users")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("admin")
+@RolesAllowed({"admin", "doctor", "secretary"})
 public class UserController {
 
     @Inject
     UserService userService;
 
     @GET
+    @RolesAllowed("admin")
     public List<UserDto> getAllUsers() {
         return userService.getAllUsers();
     }
@@ -42,6 +44,7 @@ public class UserController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Response createUser(@Valid UserRequest request) {
         UserDto created = userService.createUser(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -50,13 +53,24 @@ public class UserController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public UserDto updateUser(@PathParam("id") UUID id, @Valid UserRequest request) {
         return userService.updateUser(id, request);
     }
 
     @PATCH
     @Path("/{id}/toggle-status")
+    @RolesAllowed("admin")
     public UserDto toggleUserStatus(@PathParam("id") UUID id) {
         return userService.toggleUserStatus(id);
+    }
+
+    @PUT
+    @Path("/{id}/change-password")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin", "doctor", "secretary"})
+    public Response changePassword(@PathParam("id") UUID id, @Valid ChangePasswordRequest request) {
+        userService.changePassword(id, request.getOldPassword(), request.getNewPassword());
+        return Response.noContent().build();
     }
 }

@@ -120,6 +120,15 @@ public class UserService {
         return toDto.apply(user);
     }
 
+    public void changePassword(UUID id, String oldPassword, String newPassword) {
+        log.info("Changing password for user with id: {}", id);
+
+        UserEntity user = userRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
+
+        keycloakAdminService.changePassword(user.getKeycloakId(), oldPassword, newPassword);
+    }
+
     // ============ Mappers ============
 
     public static final Function<UserEntity, UserDto> toDto = user -> UserDto.builder()
