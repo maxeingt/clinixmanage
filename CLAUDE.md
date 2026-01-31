@@ -20,6 +20,7 @@ Sistema de gestión de clínicas médicas.
 - **Context path**: `/clinicxmanage`
 - **API base**: `/api/v1`
 - **CORS**: habilitado para `http://localhost:4200` (Angular frontend)
+- **Migraciones**: No se usa Flyway. Los cambios de BD se aplican manualmente.
 
 ## Estructura del Proyecto
 
@@ -49,6 +50,9 @@ src/main/java/gt/com/xfactory/
 - **Controladores**: `*Controller` (ej: `DoctorController`)
 - **IDs compuestos**: `*Id` (ej: `DoctorClinicId`, `DoctorSpecialtyId`)
 
+### Imports
+- Usar **wildcard imports** (`import java.util.*;`), NO imports de línea individual.
+
 ### Lombok
 Usar en todas las clases:
 - `@Data` - getters, setters, equals, hashCode, toString
@@ -60,7 +64,7 @@ Usar en todas las clases:
 @RequestScoped
 @Path("/api/v1/recurso")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")  // Siempre proteger con autenticación
+@RolesAllowed({"admin", "doctor", "secretary"})  // Roles permitidos a nivel de clase
 public class RecursoController { }
 ```
 
@@ -77,6 +81,32 @@ public class RecursoRepository implements PanacheRepository<RecursoEntity> { }
 public class RecursoService { }
 ```
 
+## Modelo de Seguridad
+
+La seguridad se maneja exclusivamente por **rol global** via `@RolesAllowed`. No existen permisos granulares por clínica.
+
+### Roles: `admin`, `doctor`, `secretary`
+
+### Permisos por recurso
+
+| Recurso | Admin | Doctor | Secretary |
+|---------|-------|--------|-----------|
+| Farmacia (medicamentos, farmacéuticas, distribuidores) | CRUD | Solo ver | Solo ver |
+| Clínicas | CRUD | Solo ver | Solo ver |
+| Doctores | CRUD | Solo ver | Solo ver |
+| Especialidades | Solo ver | Solo ver | Solo ver |
+| Pacientes | CRUD | CRUD | CRUD |
+| Citas | CRUD | CRUD | CRUD |
+| Expedientes y recetas | CRUD | CRUD | Solo ver |
+| Usuarios | CRUD | Solo ver propio | Solo ver propio |
+| Cambio de password | Sí | Sí | Sí |
+| Dashboard | Ver | Ver | Ver |
+
+### Implementación
+- `@RolesAllowed({"admin", "doctor", "secretary"})` a nivel de **clase** para permitir lectura a todos.
+- `@RolesAllowed("admin")` a nivel de **método** para restringir escritura (POST/PUT/DELETE).
+- `@RolesAllowed({"admin", "doctor"})` a nivel de **método** para expedientes/recetas.
+
 ## Entidades Principales
 
 | Entidad | Descripción |
@@ -89,7 +119,6 @@ public class RecursoService { }
 | `MedicalRecordEntity` | Expedientes médicos |
 | `PrescriptionEntity` | Recetas |
 | `UserEntity` | Usuarios del sistema |
-| `UserClinicPermissionEntity` | Permisos de usuario por clínica |
 
 ### Relaciones Many-to-Many
 - `DoctorClinicEntity` - Doctor ↔ Clinic (con `active`, `assignedAt`, `unassignedAt`)
@@ -106,6 +135,11 @@ public class RecursoService { }
 | Expedientes | `/api/v1/medical-records` |
 | Recetas PDF | `/api/v1/medical-records/prescriptions/{id}/pdf` |
 | Usuarios | `/api/v1/users` |
+| Cambio de password | `PUT /api/v1/users/{id}/change-password` |
+| Medicamentos | `/api/v1/medications` |
+| Farmacéuticas | `/api/v1/pharmaceuticals` |
+| Distribuidores | `/api/v1/distributors` |
+| Dashboard | `/api/v1/dashboard` |
 | Admin | `/api/v1/admin` |
 
 ## Paginación
@@ -143,7 +177,7 @@ Ejemplo: `feat: agregar CRUD de doctores`
 
 ## Notas Importantes
 
-1. **Seguridad**: Todos los endpoints deben tener `@RolesAllowed("user")` a nivel de clase. NO usar `@PermitAll` excepto casos muy específicos.
+1. **Seguridad**: Usar `@RolesAllowed` a nivel de clase y método según la matriz de permisos. NO usar `@PermitAll` excepto casos muy específicos.
 
 2. **Relaciones doctor-clínica**: Usar soft delete con campo `active`. Al remover, poner `active=false` y `unassignedAt=now()`.
 
@@ -154,3 +188,7 @@ Ejemplo: `feat: agregar CRUD de doctores`
 5. **Transacciones**: Usar `@Transactional` en métodos de servicio que modifican datos.
 
 6. **Generación de PDF**: Usar `PdfService` (`@ApplicationScoped`) para generar PDFs con OpenPDF. Actualmente soporta generación de recetas médicas. Para agregar nuevos tipos de PDF, añadir métodos en este servicio.
+
+7. **Keycloak**: Dos clients configurados:
+   - `clinicxmanage-admin` — client confidential con `client_credentials`, para operaciones admin (crear usuarios, resetear passwords).
+   - `quarkus-backend` — client confidential con `Direct Access Grants` habilitado, usado para validar credenciales de usuario (ej: cambio de password).
