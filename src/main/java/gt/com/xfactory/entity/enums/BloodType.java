@@ -25,8 +25,15 @@ public enum BloodType {
     }
 
     public static BloodType fromValue(String value) {
+        if (value == null || value.isBlank()) {
+            return UNKNOWN;
+        }
+        String normalized = value.trim().toLowerCase();
+        if (normalized.equals("desconocido")) {
+            return UNKNOWN;
+        }
         for (BloodType type : BloodType.values()) {
-            if (type.value.equals(value)) {
+            if (type.value.equalsIgnoreCase(value.trim())) {
                 return type;
             }
         }

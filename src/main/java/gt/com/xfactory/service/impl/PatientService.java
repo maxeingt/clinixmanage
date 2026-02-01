@@ -4,6 +4,7 @@ import gt.com.xfactory.dto.request.*;
 import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
+import gt.com.xfactory.entity.converter.GenderTypeConverter;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
 import gt.com.xfactory.utils.*;
@@ -90,17 +91,13 @@ public class PatientService {
         patient.setChronicConditions(request.getChronicConditions());
         patient.setInsuranceProvider(request.getInsuranceProvider());
         patient.setInsuranceNumber(request.getInsuranceNumber());
-        patient.setDpi(request.getDpi());
+        patient.setDpi(StringUtils.isNotBlank(request.getDpi()) ? request.getDpi() : null);
         patient.setNationality(request.getNationality());
         patient.setHeight(request.getHeight());
         patient.setWeight(request.getWeight());
 
         if (request.getGender() != null && !request.getGender().isBlank()) {
-            try {
-                patient.setGender(GenderType.valueOf(request.getGender().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid gender value: {}", request.getGender());
-            }
+            patient.setGender(GenderType.fromValue(request.getGender()));
         }
 
         if (request.getBloodGroup() != null && !request.getBloodGroup().isBlank()) {
@@ -134,17 +131,13 @@ public class PatientService {
         patient.setChronicConditions(request.getChronicConditions());
         patient.setInsuranceProvider(request.getInsuranceProvider());
         patient.setInsuranceNumber(request.getInsuranceNumber());
-        patient.setDpi(request.getDpi());
+        patient.setDpi(StringUtils.isNotBlank(request.getDpi()) ? request.getDpi() : null);
         patient.setNationality(request.getNationality());
         patient.setHeight(request.getHeight());
         patient.setWeight(request.getWeight());
 
         if (request.getGender() != null && !request.getGender().isBlank()) {
-            try {
-                patient.setGender(GenderType.valueOf(request.getGender().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                log.warn("Invalid gender value: {}", request.getGender());
-            }
+            patient.setGender(GenderType.fromValue(request.getGender()));
         }
 
         if (request.getBloodGroup() != null && !request.getBloodGroup().isBlank()) {
