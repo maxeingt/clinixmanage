@@ -60,6 +60,10 @@ public class MedicalAppointmentRepository implements PanacheRepository<MedicalAp
                 query.append(" AND appointmentDate <= :endDate");
                 params.put("endDate", filter.endDate);
             }
+            if (filter.status != null) {
+                query.append(" AND status = :status");
+                params.put("status", filter.status);
+            }
         }
 
         query.append(" ORDER BY appointmentDate ASC");

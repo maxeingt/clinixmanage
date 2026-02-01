@@ -1,5 +1,6 @@
 package gt.com.xfactory.dto.request.filter;
 
+import gt.com.xfactory.entity.enums.AppointmentStatus;
 import jakarta.ws.rs.QueryParam;
 
 import java.time.LocalDateTime;
@@ -18,4 +19,7 @@ public class MedicalAppointmentFilterDto {
 
     @QueryParam("endDate")
     public LocalDateTime endDate;
+
+    @QueryParam("status")
+    public AppointmentStatus status;
 }
