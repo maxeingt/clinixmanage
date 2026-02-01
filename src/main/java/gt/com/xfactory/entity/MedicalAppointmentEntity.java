@@ -78,6 +78,10 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @Column(name = "source", length = 20)
     private AppointmentSource source;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "follow_up_appointment_id")
+    private MedicalAppointmentEntity followUpAppointment;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

@@ -33,5 +33,6 @@ public class MedicalAppointmentDto implements Serializable {
     private LocalDateTime endTime;
     private String cancellationReason;
     private String source;
+    private UUID followUpAppointmentId;
     private LocalDateTime createdAt;
 }

@@ -38,4 +38,6 @@ public class MedicalAppointmentRequest {
     private String notes;
 
     private String cancellationReason;
+
+    private UUID followUpAppointmentId;
 }

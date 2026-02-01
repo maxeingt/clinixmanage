@@ -246,6 +246,12 @@ public class PatientService {
         appointment.setNotes(request.getNotes());
         appointment.setSource(AppointmentSource.web);
 
+        if (request.getFollowUpAppointmentId() != null) {
+            var followUp = medicalAppointmentRepository.findByIdOptional(request.getFollowUpAppointmentId())
+                    .orElseThrow(() -> new NotFoundException("Follow-up appointment not found with id: " + request.getFollowUpAppointmentId()));
+            appointment.setFollowUpAppointment(followUp);
+        }
+
         if (request.getStatus() != null) {
             applyStatusTransition(appointment, request.getStatus(), request.getCancellationReason());
         } else {
@@ -289,6 +295,14 @@ public class PatientService {
         appointment.setReason(request.getReason());
         appointment.setDiagnosis(request.getDiagnosis());
         appointment.setNotes(request.getNotes());
+
+        if (request.getFollowUpAppointmentId() != null) {
+            var followUp = medicalAppointmentRepository.findByIdOptional(request.getFollowUpAppointmentId())
+                    .orElseThrow(() -> new NotFoundException("Follow-up appointment not found with id: " + request.getFollowUpAppointmentId()));
+            appointment.setFollowUpAppointment(followUp);
+        } else {
+            appointment.setFollowUpAppointment(null);
+        }
 
         if (request.getStatus() != null) {
             applyStatusTransition(appointment, request.getStatus(), request.getCancellationReason());
@@ -472,6 +486,7 @@ public class PatientService {
                     .endTime(entity.getEndTime())
                     .cancellationReason(entity.getCancellationReason())
                     .source(entity.getSource() != null ? entity.getSource().name() : null)
+                    .followUpAppointmentId(entity.getFollowUpAppointment() != null ? entity.getFollowUpAppointment().getId() : null)
                     .createdAt(entity.getCreatedAt())
                     .build();
 }
