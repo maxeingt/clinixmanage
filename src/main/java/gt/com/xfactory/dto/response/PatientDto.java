@@ -1,13 +1,11 @@
 package gt.com.xfactory.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.UUID;
+import java.io.*;
+import java.math.*;
+import java.time.*;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -32,5 +30,9 @@ public class PatientDto implements Serializable {
     private String chronicConditions;
     private String insuranceProvider;
     private String insuranceNumber;
+    private String dpi;
+    private String nationality;
+    private BigDecimal height;
+    private BigDecimal weight;
     private Boolean hasPathologicalHistory;
 }

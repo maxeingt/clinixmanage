@@ -1,17 +1,15 @@
 package gt.com.xfactory.entity;
 
-import gt.com.xfactory.entity.enums.BloodType;
-import gt.com.xfactory.entity.enums.GenderType;
-import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import gt.com.xfactory.entity.enums.*;
+import io.quarkus.hibernate.orm.panache.*;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.envers.Audited;
-import lombok.NoArgsConstructor;
+import org.hibernate.envers.*;
 
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.io.*;
+import java.math.*;
+import java.time.*;
+import java.util.*;
 
 @Getter
 @Setter
@@ -75,6 +73,18 @@ public class PatientEntity extends PanacheEntityBase implements Serializable {
 
     @Column(name = "insurance_number", length = 50)
     private String insuranceNumber;
+
+    @Column(name = "dpi", length = 20, unique = true)
+    private String dpi;
+
+    @Column(name = "nationality", length = 100)
+    private String nationality;
+
+    @Column(name = "height", precision = 5, scale = 2)
+    private BigDecimal height;
+
+    @Column(name = "weight", precision = 5, scale = 2)
+    private BigDecimal weight;
 
     @Column(name = "has_pathological_history", nullable = false)
     private Boolean hasPathologicalHistory = false;

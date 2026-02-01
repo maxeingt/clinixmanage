@@ -1,6 +1,6 @@
 package gt.com.xfactory.entity;
 
-import gt.com.xfactory.entity.enums.AppointmentStatus;
+import gt.com.xfactory.entity.enums.*;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
@@ -63,6 +63,21 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @Column(name = "notified_10_min")
     private boolean notified10Min;
 
+    @Column(name = "check_in_time")
+    private LocalDateTime checkInTime;
+
+    @Column(name = "start_time")
+    private LocalDateTime startTime;
+
+    @Column(name = "end_time")
+    private LocalDateTime endTime;
+
+    @Column(name = "cancellation_reason", columnDefinition = "TEXT")
+    private String cancellationReason;
+
+    @Column(name = "source", length = 20)
+    private AppointmentSource source;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -74,6 +89,9 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
         createdAt = LocalDateTime.now();
         if (status == null) {
             status = AppointmentStatus.scheduled;
+        }
+        if (source == null) {
+            source = AppointmentSource.web;
         }
     }
 

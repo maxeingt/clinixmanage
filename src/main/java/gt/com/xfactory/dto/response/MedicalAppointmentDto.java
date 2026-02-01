@@ -28,5 +28,10 @@ public class MedicalAppointmentDto implements Serializable {
     private String reason;
     private String diagnosis;
     private String notes;
+    private LocalDateTime checkInTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private String cancellationReason;
+    private String source;
     private LocalDateTime createdAt;
 }

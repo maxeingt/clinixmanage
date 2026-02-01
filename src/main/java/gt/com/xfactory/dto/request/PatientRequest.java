@@ -1,14 +1,10 @@
 package gt.com.xfactory.dto.request;
 
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-import java.time.LocalDate;
+import java.math.*;
+import java.time.*;
 
 @Data
 @NoArgsConstructor
@@ -40,4 +36,8 @@ public class PatientRequest {
     private String chronicConditions;
     private String insuranceProvider;
     private String insuranceNumber;
+    private String dpi;
+    private String nationality;
+    private BigDecimal height;
+    private BigDecimal weight;
 }

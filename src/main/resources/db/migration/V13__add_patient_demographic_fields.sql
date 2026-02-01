@@ -1,0 +1,10 @@
+ALTER TABLE patient ADD COLUMN dpi VARCHAR(20) UNIQUE;
+ALTER TABLE patient ADD COLUMN nationality VARCHAR(100);
+ALTER TABLE patient ADD COLUMN height DECIMAL(5,2);
+ALTER TABLE patient ADD COLUMN weight DECIMAL(5,2);
+
+-- Auditoría (Envers)
+ALTER TABLE patient_aud ADD COLUMN dpi VARCHAR(20);
+ALTER TABLE patient_aud ADD COLUMN nationality VARCHAR(100);
+ALTER TABLE patient_aud ADD COLUMN height DECIMAL(5,2);
+ALTER TABLE patient_aud ADD COLUMN weight DECIMAL(5,2);

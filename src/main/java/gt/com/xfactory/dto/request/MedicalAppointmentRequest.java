@@ -36,4 +36,6 @@ public class MedicalAppointmentRequest {
     private String diagnosis;
 
     private String notes;
+
+    private String cancellationReason;
 }

@@ -90,6 +90,10 @@ public class PatientService {
         patient.setChronicConditions(request.getChronicConditions());
         patient.setInsuranceProvider(request.getInsuranceProvider());
         patient.setInsuranceNumber(request.getInsuranceNumber());
+        patient.setDpi(request.getDpi());
+        patient.setNationality(request.getNationality());
+        patient.setHeight(request.getHeight());
+        patient.setWeight(request.getWeight());
 
         if (request.getGender() != null && !request.getGender().isBlank()) {
             try {
@@ -130,6 +134,10 @@ public class PatientService {
         patient.setChronicConditions(request.getChronicConditions());
         patient.setInsuranceProvider(request.getInsuranceProvider());
         patient.setInsuranceNumber(request.getInsuranceNumber());
+        patient.setDpi(request.getDpi());
+        patient.setNationality(request.getNationality());
+        patient.setHeight(request.getHeight());
+        patient.setWeight(request.getWeight());
 
         if (request.getGender() != null && !request.getGender().isBlank()) {
             try {
@@ -243,7 +251,13 @@ public class PatientService {
         appointment.setReason(request.getReason());
         appointment.setDiagnosis(request.getDiagnosis());
         appointment.setNotes(request.getNotes());
-        appointment.setStatus(request.getStatus() != null ? request.getStatus() : AppointmentStatus.scheduled);
+        appointment.setSource(AppointmentSource.web);
+
+        if (request.getStatus() != null) {
+            applyStatusTransition(appointment, request.getStatus(), request.getCancellationReason());
+        } else {
+            appointment.setStatus(AppointmentStatus.scheduled);
+        }
 
         if (request.getSpecialtyId() != null) {
             var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
@@ -284,7 +298,7 @@ public class PatientService {
         appointment.setNotes(request.getNotes());
 
         if (request.getStatus() != null) {
-            appointment.setStatus(request.getStatus());
+            applyStatusTransition(appointment, request.getStatus(), request.getCancellationReason());
         }
 
         if (request.getSpecialtyId() != null) {
@@ -394,6 +408,10 @@ public class PatientService {
                     .chronicConditions(entity.getChronicConditions())
                     .insuranceProvider(entity.getInsuranceProvider())
                     .insuranceNumber(entity.getInsuranceNumber())
+                    .dpi(entity.getDpi())
+                    .nationality(entity.getNationality())
+                    .height(entity.getHeight())
+                    .weight(entity.getWeight())
                     .hasPathologicalHistory(entity.getHasPathologicalHistory())
                     .build();
 
@@ -408,8 +426,30 @@ public class PatientService {
     private static final java.util.Set<AppointmentStatus> MODIFIABLE_STATUSES = java.util.Set.of(
             AppointmentStatus.scheduled,
             AppointmentStatus.confirmed,
+            AppointmentStatus.in_progress,
             AppointmentStatus.reopened
     );
+
+    private void applyStatusTransition(MedicalAppointmentEntity appointment, AppointmentStatus newStatus, String cancellationReason) {
+        switch (newStatus) {
+            case confirmed:
+                appointment.setCheckInTime(LocalDateTime.now());
+                break;
+            case in_progress:
+                appointment.setStartTime(LocalDateTime.now());
+                break;
+            case completed:
+                appointment.setEndTime(LocalDateTime.now());
+                break;
+            case cancelled:
+            case no_show:
+                appointment.setCancellationReason(cancellationReason);
+                break;
+            default:
+                break;
+        }
+        appointment.setStatus(newStatus);
+    }
 
     private void validateModifiable(MedicalAppointmentEntity appointment) {
         if (!MODIFIABLE_STATUSES.contains(appointment.getStatus())) {
@@ -434,6 +474,11 @@ public class PatientService {
                     .reason(entity.getReason())
                     .diagnosis(entity.getDiagnosis())
                     .notes(entity.getNotes())
+                    .checkInTime(entity.getCheckInTime())
+                    .startTime(entity.getStartTime())
+                    .endTime(entity.getEndTime())
+                    .cancellationReason(entity.getCancellationReason())
+                    .source(entity.getSource() != null ? entity.getSource().name() : null)
                     .createdAt(entity.getCreatedAt())
                     .build();
 }
