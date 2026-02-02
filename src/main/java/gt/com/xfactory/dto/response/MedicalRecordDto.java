@@ -27,7 +27,6 @@ public class MedicalRecordDto implements Serializable {
     private String chiefComplaint;
     private String presentIllness;
     private String physicalExam;
-    private String diagnosis;
     private String treatmentPlan;
     private Map<String, Object> vitalSigns;
     private Map<String, Object> specialtyData;

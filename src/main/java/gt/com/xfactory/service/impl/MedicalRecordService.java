@@ -82,7 +82,7 @@ public class MedicalRecordService {
     @Transactional
     public MedicalRecordDto createMedicalRecord(UUID patientId, UUID appointmentId, UUID doctorId, UUID specialtyId,
                                                  MedicalRecordType recordType, String chiefComplaint, String presentIllness,
-                                                 String physicalExam, String diagnosis, String treatmentPlan,
+                                                 String physicalExam, String treatmentPlan,
                                                  Map<String, Object> vitalSigns, Map<String, Object> specialtyData,
                                                  Object attachments) {
         log.info("Creating medical record for patient: {}", patientId);
@@ -100,7 +100,6 @@ public class MedicalRecordService {
         record.setChiefComplaint(chiefComplaint);
         record.setPresentIllness(presentIllness);
         record.setPhysicalExam(physicalExam);
-        record.setDiagnosis(diagnosis);
         record.setTreatmentPlan(treatmentPlan);
         record.setVitalSigns(vitalSigns);
         record.setSpecialtyData(specialtyData);
@@ -126,7 +125,7 @@ public class MedicalRecordService {
 
     @Transactional
     public MedicalRecordDto updateMedicalRecord(UUID recordId, String chiefComplaint, String presentIllness,
-                                                 String physicalExam, String diagnosis, String treatmentPlan,
+                                                 String physicalExam, String treatmentPlan,
                                                  Map<String, Object> vitalSigns, Map<String, Object> specialtyData,
                                                  Object attachments) {
         log.info("Updating medical record: {}", recordId);
@@ -137,7 +136,6 @@ public class MedicalRecordService {
         if (chiefComplaint != null) record.setChiefComplaint(chiefComplaint);
         if (presentIllness != null) record.setPresentIllness(presentIllness);
         if (physicalExam != null) record.setPhysicalExam(physicalExam);
-        if (diagnosis != null) record.setDiagnosis(diagnosis);
         if (treatmentPlan != null) record.setTreatmentPlan(treatmentPlan);
         if (vitalSigns != null) record.setVitalSigns(vitalSigns);
         if (specialtyData != null) record.setSpecialtyData(specialtyData);
@@ -311,7 +309,6 @@ public class MedicalRecordService {
                     .chiefComplaint(entity.getChiefComplaint())
                     .presentIllness(entity.getPresentIllness())
                     .physicalExam(entity.getPhysicalExam())
-                    .diagnosis(entity.getDiagnosis())
                     .treatmentPlan(entity.getTreatmentPlan())
                     .vitalSigns(entity.getVitalSigns())
                     .specialtyData(entity.getSpecialtyData())

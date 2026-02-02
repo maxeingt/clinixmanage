@@ -34,8 +34,6 @@ public class MedicalRecordRequest {
 
     private String physicalExam;
 
-    private String diagnosis;
-
     private String treatmentPlan;
 
     private Map<String, Object> vitalSigns;

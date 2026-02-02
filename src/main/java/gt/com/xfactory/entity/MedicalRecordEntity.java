@@ -57,9 +57,6 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     @Column(name = "physical_exam", columnDefinition = "TEXT")
     private String physicalExam;
 
-    @Column(name = "diagnosis", columnDefinition = "TEXT")
-    private String diagnosis;
-
     @Column(name = "treatment_plan", columnDefinition = "TEXT")
     private String treatmentPlan;
 
