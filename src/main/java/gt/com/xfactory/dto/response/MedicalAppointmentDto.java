@@ -1,13 +1,10 @@
 package gt.com.xfactory.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -34,5 +31,6 @@ public class MedicalAppointmentDto implements Serializable {
     private String cancellationReason;
     private String source;
     private UUID followUpAppointmentId;
+    private List<AppointmentDiagnosisDto> diagnoses;
     private LocalDateTime createdAt;
 }

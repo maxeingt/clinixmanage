@@ -6,9 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.*;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Getter
 @Setter
@@ -81,6 +81,10 @@ public class MedicalAppointmentEntity extends PanacheEntityBase implements Seria
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "follow_up_appointment_id")
     private MedicalAppointmentEntity followUpAppointment;
+
+    @NotAudited
+    @OneToMany(mappedBy = "appointment", fetch = FetchType.LAZY)
+    private List<AppointmentDiagnosisEntity> diagnoses;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

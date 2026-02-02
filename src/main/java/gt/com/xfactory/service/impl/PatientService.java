@@ -51,6 +51,12 @@ public class PatientService {
     @Inject
     SpecialtyRepository specialtyRepository;
 
+    @Inject
+    AppointmentDiagnosisRepository appointmentDiagnosisRepository;
+
+    @Inject
+    DiagnosisCatalogRepository diagnosisCatalogRepository;
+
     public PageResponse<PatientDto> getPatients(PatientFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching patients with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
@@ -265,6 +271,7 @@ public class PatientService {
         }
 
         medicalAppointmentRepository.persist(appointment);
+        persistDiagnoses(appointment, request.getDiagnoses());
         log.info("Medical appointment created with id: {}", appointment.getId());
 
         return toMedicalAppointmentDto.apply(appointment);
@@ -317,6 +324,8 @@ public class PatientService {
         }
 
         medicalAppointmentRepository.persist(appointment);
+        appointmentDiagnosisRepository.deleteByAppointmentId(appointmentId);
+        persistDiagnoses(appointment, request.getDiagnoses());
         log.info("Medical appointment updated: {}", appointmentId);
 
         return toMedicalAppointmentDto.apply(appointment);
@@ -353,6 +362,7 @@ public class PatientService {
 
         validateModifiable(appointment);
 
+        appointmentDiagnosisRepository.deleteByAppointmentId(appointmentId);
         medicalAppointmentRepository.delete(appointment);
         log.info("Medical appointment deleted: {}", appointmentId);
     }
@@ -458,6 +468,23 @@ public class PatientService {
         appointment.setStatus(newStatus);
     }
 
+    private void persistDiagnoses(MedicalAppointmentEntity appointment, List<AppointmentDiagnosisRequest> diagnoses) {
+        if (diagnoses == null || diagnoses.isEmpty()) {
+            return;
+        }
+        for (AppointmentDiagnosisRequest req : diagnoses) {
+            var diagCatalog = diagnosisCatalogRepository.findByIdOptional(req.getDiagnosisId())
+                    .orElseThrow(() -> new NotFoundException("Diagnosis not found with id: " + req.getDiagnosisId()));
+
+            AppointmentDiagnosisEntity entity = new AppointmentDiagnosisEntity();
+            entity.setAppointment(appointment);
+            entity.setDiagnosis(diagCatalog);
+            entity.setType(req.getType());
+            entity.setNotes(req.getNotes());
+            appointmentDiagnosisRepository.persist(entity);
+        }
+    }
+
     private void validateModifiable(MedicalAppointmentEntity appointment) {
         if (!MODIFIABLE_STATUSES.contains(appointment.getStatus())) {
             throw new IllegalStateException(
@@ -487,6 +514,16 @@ public class PatientService {
                     .cancellationReason(entity.getCancellationReason())
                     .source(entity.getSource() != null ? entity.getSource().name() : null)
                     .followUpAppointmentId(entity.getFollowUpAppointment() != null ? entity.getFollowUpAppointment().getId() : null)
+                    .diagnoses(entity.getDiagnoses() != null ? entity.getDiagnoses().stream()
+                            .map(d -> AppointmentDiagnosisDto.builder()
+                                    .id(d.getId())
+                                    .diagnosisId(d.getDiagnosis().getId())
+                                    .code(d.getDiagnosis().getCode())
+                                    .name(d.getDiagnosis().getName())
+                                    .type(d.getType() != null ? d.getType().name() : null)
+                                    .notes(d.getNotes())
+                                    .build())
+                            .collect(Collectors.toList()) : Collections.emptyList())
                     .createdAt(entity.getCreatedAt())
                     .build();
 }

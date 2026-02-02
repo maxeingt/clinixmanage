@@ -1,14 +1,11 @@
 package gt.com.xfactory.dto.request;
 
-import gt.com.xfactory.entity.enums.AppointmentStatus;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import gt.com.xfactory.entity.enums.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.*;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -40,4 +37,6 @@ public class MedicalAppointmentRequest {
     private String cancellationReason;
 
     private UUID followUpAppointmentId;
+
+    private List<AppointmentDiagnosisRequest> diagnoses;
 }
