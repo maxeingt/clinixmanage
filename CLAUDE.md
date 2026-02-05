@@ -31,7 +31,7 @@ src/main/java/gt/com/xfactory/
 │   ├── request/    # DTOs de entrada (*Request, *FilterDto)
 │   └── response/   # DTOs de salida (*Dto)
 ├── entity/
-│   ├── enums/      # Enums (AppointmentStatus, GenderType, BloodType, MedicalRecordType)
+│   ├── enums/      # Enums (AppointmentStatus, GenderType, BloodType, MedicalRecordType, LabOrderStatus, DiagnosisType, AppointmentSource, PresentationType)
 │   └── converter/  # JPA Converters para enums
 ├── repository/     # Repositorios Panache
 ├── service/impl/   # Servicios de negocio
@@ -98,6 +98,9 @@ La seguridad se maneja exclusivamente por **rol global** via `@RolesAllowed`. No
 | Pacientes | CRUD | CRUD | CRUD |
 | Citas | CRUD | CRUD | CRUD |
 | Expedientes y recetas | CRUD | CRUD | Solo ver |
+| Órdenes de laboratorio | CRUD | CRUD | Solo ver |
+| Catálogo CIE-10 | CRUD | Solo ver | Solo ver |
+| Diagnósticos de cita | CRUD | CRUD | Solo ver |
 | Usuarios | CRUD | Solo ver propio | Solo ver propio |
 | Cambio de password | Sí | Sí | Sí |
 | Dashboard | Ver | Ver | Ver |
@@ -119,10 +122,16 @@ La seguridad se maneja exclusivamente por **rol global** via `@RolesAllowed`. No
 | `MedicalRecordEntity` | Expedientes médicos |
 | `PrescriptionEntity` | Recetas |
 | `UserEntity` | Usuarios del sistema |
+| `LabOrderEntity` | Órdenes de laboratorio |
+| `LabResultEntity` | Resultados de laboratorio |
+| `DiagnosisCatalogEntity` | Catálogo CIE-10/ICD de diagnósticos |
+| `AppointmentDiagnosisEntity` | Diagnósticos estructurados por cita |
 
 ### Relaciones Many-to-Many
 - `DoctorClinicEntity` - Doctor ↔ Clinic (con `active`, `assignedAt`, `unassignedAt`)
 - `DoctorSpecialtyEntity` - Doctor ↔ Specialty
+- `AppointmentDiagnosisEntity` - Appointment ↔ DiagnosisCatalog (con `diagnosisType`: principal/secundario)
+- `PrescriptionMedicationEntity` - Prescription ↔ Medication
 
 ## Endpoints Principales
 
@@ -134,11 +143,15 @@ La seguridad se maneja exclusivamente por **rol global** via `@RolesAllowed`. No
 | Especialidades | `/api/v1/specialties` |
 | Expedientes | `/api/v1/medical-records` |
 | Recetas PDF | `/api/v1/medical-records/prescriptions/{id}/pdf` |
+| Órdenes de laboratorio | `/api/v1/lab-orders` |
+| Resultados de laboratorio | `/api/v1/lab-orders/{orderId}/results` |
+| Catálogo CIE-10 | `/api/v1/diagnosis-catalog` |
 | Usuarios | `/api/v1/users` |
 | Cambio de password | `PUT /api/v1/users/{id}/change-password` |
 | Medicamentos | `/api/v1/medications` |
 | Farmacéuticas | `/api/v1/pharmaceuticals` |
 | Distribuidores | `/api/v1/distributors` |
+| Notificaciones | `/api/v1/notifications` |
 | Dashboard | `/api/v1/dashboard` |
 | Admin | `/api/v1/admin` |
 
@@ -174,6 +187,42 @@ Ejemplo: `feat: agregar CRUD de doctores`
 # Build nativo
 ./mvnw package -Pnative
 ```
+
+## Enums
+
+| Enum | Valores |
+|------|---------|
+| `AppointmentStatus` | `scheduled`, `confirmed`, `in_progress`, `completed`, `cancelled`, `no_show`, `expired`, `reopened` |
+| `GenderType` | `male`, `female`, `other`, `prefer_not_to_say` |
+| `BloodType` | `A_POSITIVE`, `A_NEGATIVE`, `B_POSITIVE`, `B_NEGATIVE`, `AB_POSITIVE`, `AB_NEGATIVE`, `O_POSITIVE`, `O_NEGATIVE`, `UNKNOWN` |
+| `MedicalRecordType` | `consultation`, `exam`, `procedure`, `lab_result`, `imaging`, `prescription`, `follow_up`, `referral` |
+| `LabOrderStatus` | `pending`, `in_progress`, `completed`, `cancelled` |
+| `DiagnosisType` | `principal`, `secundario` |
+| `AppointmentSource` | `web`, `phone`, `walk_in` |
+
+## Funcionalidades Recientes
+
+### Módulo de Laboratorio
+- CRUD de órdenes de laboratorio (`LabOrderEntity`) con resultados individuales (`LabResultEntity`).
+- Una orden puede tener múltiples resultados. Eliminar una orden elimina sus resultados (cascade).
+- Soporta valores de referencia (`referenceMin`, `referenceMax`) y flag de resultado anormal (`isAbnormal`).
+- Filtros por paciente, doctor, estado y rango de fechas.
+
+### Catálogo CIE-10 y Diagnósticos Estructurados
+- `DiagnosisCatalogEntity`: catálogo de códigos CIE-10/ICD con código, nombre, categoría y capítulo.
+- `AppointmentDiagnosisEntity`: vincula diagnósticos del catálogo a citas médicas con tipo (`principal`/`secundario`).
+- Los diagnósticos se gestionan como parte de las citas médicas.
+
+### Citas de Seguimiento
+- `MedicalAppointmentEntity` tiene campo `followUpAppointment` (self-referencing FK).
+- Permite vincular citas de seguimiento a citas originales.
+
+### Reapertura de Citas
+- Estado `reopened` en `AppointmentStatus` para reabrir citas expiradas.
+- Se usa `ReopenAppointmentRequest` con nueva fecha de cita.
+
+### Origen de Citas
+- `AppointmentSource` (`web`, `phone`, `walk_in`) para rastrear cómo se creó la cita.
 
 ## Notas Importantes
 
