@@ -109,6 +109,81 @@ public class PdfService {
         }
     }
 
+    public byte[] generateLabOrderPdf(LabOrderDto labOrder) {
+        log.info("Generating PDF for lab order: {}", labOrder.getId());
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document();
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            // Title
+            Paragraph title = new Paragraph("ORDEN DE LABORATORIO", TITLE_FONT);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(20f);
+            document.add(title);
+
+            // Doctor info
+            document.add(new Paragraph("Doctor: " + labOrder.getDoctorName(), HEADER_FONT));
+            document.add(new Paragraph(" "));
+
+            // Patient info
+            document.add(new Paragraph("Paciente: " + labOrder.getPatientName(), HEADER_FONT));
+            document.add(new Paragraph(" "));
+
+            // Date
+            String orderDate = labOrder.getOrderDate() != null
+                    ? labOrder.getOrderDate().format(DATE_FORMAT) : "N/A";
+            document.add(new Paragraph("Fecha de orden: " + orderDate, NORMAL_FONT));
+            document.add(new Paragraph(" "));
+
+            // Tests table
+            if (labOrder.getResults() != null && !labOrder.getResults().isEmpty()) {
+                document.add(new Paragraph("Pruebas solicitadas:", HEADER_FONT));
+                document.add(new Paragraph(" "));
+
+                PdfPTable table = new PdfPTable(2);
+                table.setWidthPercentage(100);
+                table.setWidths(new float[]{4f, 2f});
+
+                addTableHeader(table, "Prueba");
+                addTableHeader(table, "Código");
+
+                for (LabResultDto result : labOrder.getResults()) {
+                    addTableCell(table, result.getTestName());
+                    addTableCell(table, result.getTestCode());
+                }
+
+                document.add(table);
+                document.add(new Paragraph(" "));
+            }
+
+            // Notes
+            if (labOrder.getNotes() != null && !labOrder.getNotes().isBlank()) {
+                document.add(new Paragraph("Notas:", HEADER_FONT));
+                document.add(new Paragraph(labOrder.getNotes(), NORMAL_FONT));
+                document.add(new Paragraph(" "));
+            }
+
+            // Signature line
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(" "));
+            Paragraph signatureLine = new Paragraph("_________________________________", NORMAL_FONT);
+            signatureLine.setAlignment(Element.ALIGN_CENTER);
+            document.add(signatureLine);
+
+            Paragraph signatureName = new Paragraph("Dr. " + labOrder.getDoctorName(), SMALL_FONT);
+            signatureName.setAlignment(Element.ALIGN_CENTER);
+            document.add(signatureName);
+
+            document.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            log.error("Error generating lab order PDF: {}", e.getMessage(), e);
+            throw new RuntimeException("Error generating lab order PDF", e);
+        }
+    }
+
     private void addTableHeader(PdfPTable table, String text) {
         PdfPCell cell = new PdfPCell(new Phrase(text, TABLE_HEADER_FONT));
         cell.setBackgroundColor(new Color(60, 60, 60));

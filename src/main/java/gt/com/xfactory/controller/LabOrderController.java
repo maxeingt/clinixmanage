@@ -22,6 +22,9 @@ public class LabOrderController {
     @Inject
     LabOrderService labOrderService;
 
+    @Inject
+    PdfService pdfService;
+
     @GET
     public PageResponse<LabOrderDto> getLabOrders(
             @BeanParam LabOrderFilterDto filter,
@@ -39,6 +42,17 @@ public class LabOrderController {
     @Path("/patient/{patientId}")
     public List<LabOrderDto> getLabOrdersByPatientId(@PathParam("patientId") UUID patientId) {
         return labOrderService.getLabOrdersByPatientId(patientId);
+    }
+
+    @GET
+    @Path("/{id}/pdf")
+    @Produces("application/pdf")
+    public Response getLabOrderPdf(@PathParam("id") UUID id) {
+        LabOrderDto labOrder = labOrderService.getLabOrderById(id);
+        byte[] pdf = pdfService.generateLabOrderPdf(labOrder);
+        return Response.ok(pdf, "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"orden-laboratorio-" + id + ".pdf\"")
+                .build();
     }
 
     @POST

@@ -145,6 +145,7 @@ La seguridad se maneja exclusivamente por **rol global** via `@RolesAllowed`. No
 | Recetas PDF | `/api/v1/medical-records/prescriptions/{id}/pdf` |
 | Órdenes de laboratorio | `/api/v1/lab-orders` |
 | Resultados de laboratorio | `/api/v1/lab-orders/{orderId}/results` |
+| Orden de laboratorio PDF | `/api/v1/lab-orders/{id}/pdf` |
 | Catálogo CIE-10 | `/api/v1/diagnosis-catalog` |
 | Usuarios | `/api/v1/users` |
 | Cambio de password | `PUT /api/v1/users/{id}/change-password` |
@@ -236,7 +237,7 @@ Ejemplo: `feat: agregar CRUD de doctores`
 
 5. **Transacciones**: Usar `@Transactional` en métodos de servicio que modifican datos.
 
-6. **Generación de PDF**: Usar `PdfService` (`@ApplicationScoped`) para generar PDFs con OpenPDF. Actualmente soporta generación de recetas médicas. Para agregar nuevos tipos de PDF, añadir métodos en este servicio.
+6. **Generación de PDF**: Usar `PdfService` (`@ApplicationScoped`) para generar PDFs con OpenPDF. Soporta generación de recetas médicas y órdenes de laboratorio. Para agregar nuevos tipos de PDF, añadir métodos en este servicio.
 
 7. **Keycloak**: Dos clients configurados:
    - `clinicxmanage-admin` — client confidential con `client_credentials`, para operaciones admin (crear usuarios, resetear passwords).
