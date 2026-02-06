@@ -150,7 +150,6 @@ public class AuthController {
     private UserDto toDto(UserEntity user) {
         return UserDto.builder()
                 .id(user.getId())
-                .keycloakId(user.getKeycloakId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .role(user.getRole())

@@ -62,7 +62,7 @@ public class MedicalRecordService {
         String keycloakId = jwt.getSubject();
         return doctorRepository.findByUserKeycloakId(keycloakId)
                 .map(DoctorEntity::getId)
-                .orElse(null);
+                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
     }
 
     public List<MedicalRecordDto> getMedicalRecordsByPatientId(UUID patientId) {
@@ -82,15 +82,16 @@ public class MedicalRecordService {
     public List<MedicalRecordDto> getMedicalRecordsByAppointmentId(UUID appointmentId) {
         log.info("Fetching medical records for appointment: {}", appointmentId);
 
-        medicalAppointmentRepository.findByIdOptional(appointmentId)
+        MedicalAppointmentEntity appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Appointment not found with id: " + appointmentId));
 
         UUID currentDoctorId = getCurrentDoctorId();
-        Stream<MedicalRecordEntity> stream = medicalRecordRepository.findByAppointmentId(appointmentId).stream();
-        if (currentDoctorId != null) {
-            stream = stream.filter(r -> r.getDoctor().getId().equals(currentDoctorId));
+        if (currentDoctorId != null && !appointment.getDoctor().getId().equals(currentDoctorId)) {
+            throw new ForbiddenException("No tiene acceso a los expedientes de esta cita");
         }
-        return stream.map(toMedicalRecordDto).collect(Collectors.toList());
+
+        return medicalRecordRepository.findByAppointmentId(appointmentId).stream()
+                .map(toMedicalRecordDto).collect(Collectors.toList());
     }
 
     public MedicalRecordDto getMedicalRecordById(UUID recordId) {

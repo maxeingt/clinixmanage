@@ -137,7 +137,6 @@ public class UserService {
 
     public static final Function<UserEntity, UserDto> toDto = user -> UserDto.builder()
             .id(user.getId())
-            .keycloakId(user.getKeycloakId())
             .username(user.getUsername())
             .firstName(user.getFirstName())
             .lastName(user.getLastName())

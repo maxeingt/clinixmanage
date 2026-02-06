@@ -56,7 +56,7 @@ public class LabOrderService {
         String keycloakId = jwt.getSubject();
         return doctorRepository.findByUserKeycloakId(keycloakId)
                 .map(DoctorEntity::getId)
-                .orElse(null);
+                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
     }
 
     private boolean isSecretary() {

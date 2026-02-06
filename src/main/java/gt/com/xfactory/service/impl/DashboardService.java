@@ -1,11 +1,15 @@
 package gt.com.xfactory.service.impl;
 
 import gt.com.xfactory.dto.response.DashboardDto;
+import gt.com.xfactory.entity.*;
 import gt.com.xfactory.entity.enums.AppointmentStatus;
-import gt.com.xfactory.repository.MedicalAppointmentRepository;
+import gt.com.xfactory.repository.*;
+import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
 import lombok.extern.slf4j.Slf4j;
+import org.eclipse.microprofile.jwt.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -20,7 +24,31 @@ public class DashboardService {
     @Inject
     MedicalAppointmentRepository medicalAppointmentRepository;
 
+    @Inject
+    DoctorRepository doctorRepository;
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    @Inject
+    JsonWebToken jwt;
+
+    private UUID getCurrentDoctorId() {
+        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
+            return null;
+        }
+        String keycloakId = jwt.getSubject();
+        return doctorRepository.findByUserKeycloakId(keycloakId)
+                .map(DoctorEntity::getId)
+                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+    }
+
     public DashboardDto getDashboardMetrics(UUID clinicId, UUID doctorId) {
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            doctorId = currentDoctorId;
+        }
+
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();

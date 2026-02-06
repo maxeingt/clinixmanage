@@ -72,7 +72,7 @@ public class PatientService {
         String keycloakId = jwt.getSubject();
         return doctorRepository.findByUserKeycloakId(keycloakId)
                 .map(DoctorEntity::getId)
-                .orElse(null);
+                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
     }
 
     public PageResponse<PatientDto> getPatients(PatientFilterDto filter, @Valid CommonPageRequest pageRequest) {
@@ -202,6 +202,15 @@ public class PatientService {
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            long count = medicalAppointmentRepository.count(
+                    "patient.id = ?1 AND doctor.id = ?2", patientId, currentDoctorId);
+            if (count == 0) {
+                throw new ForbiddenException("No tiene acceso a este paciente");
+            }
+        }
+
         return medicalHistoryPathologicalFamRepository.findByPatientId(patientId)
                 .stream()
                 .map(toMedicalHistoryPathologicalFamDto)
@@ -214,6 +223,15 @@ public class PatientService {
 
         var patient = patientRepository.findByIdOptional(request.getPatientId())
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            long count = medicalAppointmentRepository.count(
+                    "patient.id = ?1 AND doctor.id = ?2", request.getPatientId(), currentDoctorId);
+            if (count == 0) {
+                throw new ForbiddenException("No tiene acceso a este paciente");
+            }
+        }
 
         MedicalHistoryPathologicalFamEntity entity = new MedicalHistoryPathologicalFamEntity();
         entity.setPatient(patient);
@@ -239,6 +257,16 @@ public class PatientService {
 
         var entity = medicalHistoryPathologicalFamRepository.find("id", historyId).firstResultOptional()
                 .orElseThrow(() -> new NotFoundException("Medical history not found with id: " + historyId));
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            UUID patientId = entity.getPatient().getId();
+            long count = medicalAppointmentRepository.count(
+                    "patient.id = ?1 AND doctor.id = ?2", patientId, currentDoctorId);
+            if (count == 0) {
+                throw new ForbiddenException("No tiene acceso a este paciente");
+            }
+        }
 
         entity.setMedicalHistoryType(request.getMedicalHistoryType());
         entity.setDescription(request.getDescription());
