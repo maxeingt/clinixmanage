@@ -13,4 +13,8 @@ public class DoctorRepository implements PanacheRepository<DoctorEntity> {
     public Optional<DoctorEntity> findByIdOptional(UUID id) {
         return find("id", id).firstResultOptional();
     }
+
+    public Optional<DoctorEntity> findByUserKeycloakId(String keycloakId) {
+        return find("user.keycloakId", keycloakId).firstResultOptional();
+    }
 }

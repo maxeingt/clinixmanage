@@ -6,11 +6,13 @@ import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
+import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.transaction.*;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
+import org.eclipse.microprofile.jwt.*;
 
 import java.util.*;
 import java.util.function.*;
@@ -37,12 +39,50 @@ public class LabOrderService {
     @Inject
     MedicalAppointmentRepository medicalAppointmentRepository;
 
+    @Inject
+    JsonWebToken jwt;
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    /**
+     * Retorna el UUID del doctor actual si el usuario tiene rol doctor.
+     * Retorna null si es admin o secretary (ven todas las órdenes).
+     */
+    private UUID getCurrentDoctorId() {
+        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
+            return null;
+        }
+        String keycloakId = jwt.getSubject();
+        return doctorRepository.findByUserKeycloakId(keycloakId)
+                .map(DoctorEntity::getId)
+                .orElse(null);
+    }
+
+    private boolean isSecretary() {
+        return securityIdentity.hasRole("secretary") && !securityIdentity.hasRole("admin");
+    }
+
+    private LabOrderDto mapToDto(LabOrderEntity entity) {
+        LabOrderDto dto = toLabOrderDto.apply(entity);
+        if (isSecretary()) {
+            dto.setResults(null);
+        }
+        return dto;
+    }
+
     public PageResponse<LabOrderDto> getLabOrders(LabOrderFilterDto filter, CommonPageRequest pageRequest) {
         log.info("Fetching lab orders with filter");
 
         StringBuilder query = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
         List<String> conditions = new ArrayList<>();
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            conditions.add("doctor.id = :currentDoctorId");
+            params.put("currentDoctorId", currentDoctorId);
+        }
 
         if (filter.patientId != null) {
             conditions.add("patient.id = :patientId");
@@ -73,7 +113,7 @@ public class LabOrderService {
             query.append(String.join(" AND ", conditions));
         }
 
-        return toPageResponse(labOrderRepository, query, pageRequest, params, toLabOrderDto);
+        return toPageResponse(labOrderRepository, query, pageRequest, params, this::mapToDto);
     }
 
     public List<LabOrderDto> getLabOrdersByPatientId(UUID patientId) {
@@ -82,18 +122,26 @@ public class LabOrderService {
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
+        UUID currentDoctorId = getCurrentDoctorId();
         return labOrderRepository.findByPatientId(patientId)
                 .stream()
-                .map(toLabOrderDto)
+                .filter(order -> currentDoctorId == null || order.getDoctor().getId().equals(currentDoctorId))
+                .map(this::mapToDto)
                 .collect(Collectors.toList());
     }
 
     public LabOrderDto getLabOrderById(UUID id) {
         log.info("Fetching lab order by id: {}", id);
 
-        return labOrderRepository.findByIdOptional(id)
-                .map(toLabOrderDto)
+        LabOrderEntity order = labOrderRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + id));
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null && !order.getDoctor().getId().equals(currentDoctorId)) {
+            throw new ForbiddenException("No tiene acceso a esta orden de laboratorio");
+        }
+
+        return mapToDto(order);
     }
 
     @Transactional

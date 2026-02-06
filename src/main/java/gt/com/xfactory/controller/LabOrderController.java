@@ -16,7 +16,7 @@ import java.util.*;
 @RequestScoped
 @Path("/api/v1/lab-orders")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor"})
+@RolesAllowed({"user", "admin", "doctor", "secretary"})
 public class LabOrderController {
 
     @Inject
