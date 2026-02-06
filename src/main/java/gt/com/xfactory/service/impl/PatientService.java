@@ -8,6 +8,7 @@ import gt.com.xfactory.entity.converter.GenderTypeConverter;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
 import gt.com.xfactory.utils.*;
+import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.transaction.*;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
 import org.apache.commons.lang3.*;
+import org.eclipse.microprofile.jwt.*;
 
 import java.time.*;
 import java.util.*;
@@ -57,12 +59,34 @@ public class PatientService {
     @Inject
     DiagnosisCatalogRepository diagnosisCatalogRepository;
 
+    @Inject
+    JsonWebToken jwt;
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    private UUID getCurrentDoctorId() {
+        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
+            return null;
+        }
+        String keycloakId = jwt.getSubject();
+        return doctorRepository.findByUserKeycloakId(keycloakId)
+                .map(DoctorEntity::getId)
+                .orElse(null);
+    }
+
     public PageResponse<PatientDto> getPatients(PatientFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching patients with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
         StringBuilder query = new StringBuilder();
         Map<String, Object> params = new HashMap<>();
         List<String> conditions = new ArrayList<>();
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            conditions.add("id IN (SELECT DISTINCT a.patient.id FROM MedicalAppointmentEntity a WHERE a.doctor.id = :currentDoctorId)");
+            params.put("currentDoctorId", currentDoctorId);
+        }
 
         if (StringUtils.isNotBlank(filter.name)) {
             conditions.add("(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))");
@@ -158,6 +182,15 @@ public class PatientService {
 
     public PatientDto getPatientById(UUID patientId) {
         log.info("Fetching patient by id: {}", patientId);
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            long count = medicalAppointmentRepository.count("patient.id = ?1 AND doctor.id = ?2", patientId, currentDoctorId);
+            if (count == 0) {
+                throw new ForbiddenException("No tiene acceso a este paciente");
+            }
+        }
+
         return patientRepository.findByIdOptional(patientId)
                 .map(toDto)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
@@ -222,6 +255,12 @@ public class PatientService {
 
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null) {
+            if (filter == null) filter = new MedicalAppointmentFilterDto();
+            filter.doctorId = currentDoctorId;
+        }
 
         return medicalAppointmentRepository.findByPatientIdWithFilters(patientId, filter)
                 .stream()

@@ -5,11 +5,13 @@ import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
+import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.transaction.*;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
+import org.eclipse.microprofile.jwt.*;
 
 import java.time.*;
 import java.util.*;
@@ -47,16 +49,34 @@ public class MedicalRecordService {
     @Inject
     MedicationRepository medicationRepository;
 
+    @Inject
+    JsonWebToken jwt;
+
+    @Inject
+    SecurityIdentity securityIdentity;
+
+    private UUID getCurrentDoctorId() {
+        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
+            return null;
+        }
+        String keycloakId = jwt.getSubject();
+        return doctorRepository.findByUserKeycloakId(keycloakId)
+                .map(DoctorEntity::getId)
+                .orElse(null);
+    }
+
     public List<MedicalRecordDto> getMedicalRecordsByPatientId(UUID patientId) {
         log.info("Fetching medical records for patient: {}", patientId);
 
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
-        return medicalRecordRepository.findByPatientId(patientId)
-                .stream()
-                .map(toMedicalRecordDto)
-                .collect(Collectors.toList());
+        UUID currentDoctorId = getCurrentDoctorId();
+        Stream<MedicalRecordEntity> stream = medicalRecordRepository.findByPatientId(patientId).stream();
+        if (currentDoctorId != null) {
+            stream = stream.filter(r -> r.getDoctor().getId().equals(currentDoctorId));
+        }
+        return stream.map(toMedicalRecordDto).collect(Collectors.toList());
     }
 
     public List<MedicalRecordDto> getMedicalRecordsByAppointmentId(UUID appointmentId) {
@@ -65,18 +85,26 @@ public class MedicalRecordService {
         medicalAppointmentRepository.findByIdOptional(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Appointment not found with id: " + appointmentId));
 
-        return medicalRecordRepository.findByAppointmentId(appointmentId)
-                .stream()
-                .map(toMedicalRecordDto)
-                .collect(Collectors.toList());
+        UUID currentDoctorId = getCurrentDoctorId();
+        Stream<MedicalRecordEntity> stream = medicalRecordRepository.findByAppointmentId(appointmentId).stream();
+        if (currentDoctorId != null) {
+            stream = stream.filter(r -> r.getDoctor().getId().equals(currentDoctorId));
+        }
+        return stream.map(toMedicalRecordDto).collect(Collectors.toList());
     }
 
     public MedicalRecordDto getMedicalRecordById(UUID recordId) {
         log.info("Fetching medical record by id: {}", recordId);
 
-        return medicalRecordRepository.findByIdOptional(recordId)
-                .map(toMedicalRecordDto)
+        MedicalRecordEntity record = medicalRecordRepository.findByIdOptional(recordId)
                 .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + recordId));
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null && !record.getDoctor().getId().equals(currentDoctorId)) {
+            throw new ForbiddenException("No tiene acceso a este expediente");
+        }
+
+        return toMedicalRecordDto.apply(record);
     }
 
     @Transactional
@@ -194,10 +222,12 @@ public class MedicalRecordService {
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
-        return prescriptionRepository.findByPatientId(patientId)
-                .stream()
-                .map(toPrescriptionDto)
-                .collect(Collectors.toList());
+        UUID currentDoctorId = getCurrentDoctorId();
+        Stream<PrescriptionEntity> stream = prescriptionRepository.findByPatientId(patientId).stream();
+        if (currentDoctorId != null) {
+            stream = stream.filter(p -> p.getDoctor().getId().equals(currentDoctorId));
+        }
+        return stream.map(toPrescriptionDto).collect(Collectors.toList());
     }
 
     public List<PrescriptionDto> getActivePrescriptionsByPatientId(UUID patientId) {
@@ -206,10 +236,12 @@ public class MedicalRecordService {
         patientRepository.findByIdOptional(patientId)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
-        return prescriptionRepository.findActiveByPatientId(patientId)
-                .stream()
-                .map(toPrescriptionDto)
-                .collect(Collectors.toList());
+        UUID currentDoctorId = getCurrentDoctorId();
+        Stream<PrescriptionEntity> stream = prescriptionRepository.findActiveByPatientId(patientId).stream();
+        if (currentDoctorId != null) {
+            stream = stream.filter(p -> p.getDoctor().getId().equals(currentDoctorId));
+        }
+        return stream.map(toPrescriptionDto).collect(Collectors.toList());
     }
 
     public List<PrescriptionDto> getPrescriptionsByMedicalRecordId(UUID medicalRecordId) {
