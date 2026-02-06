@@ -13,7 +13,9 @@ import jakarta.transaction.*;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
 import org.eclipse.microprofile.jwt.*;
+import org.jboss.resteasy.reactive.multipart.*;
 
+import java.io.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
@@ -29,6 +31,12 @@ public class LabOrderService {
 
     @Inject
     LabResultRepository labResultRepository;
+
+    @Inject
+    LabOrderAttachmentRepository labOrderAttachmentRepository;
+
+    @Inject
+    FileStorageService fileStorageService;
 
     @Inject
     PatientRepository patientRepository;
@@ -67,6 +75,7 @@ public class LabOrderService {
         LabOrderDto dto = toLabOrderDto.apply(entity);
         if (isSecretary()) {
             dto.setResults(null);
+            dto.setAttachments(null);
         }
         return dto;
     }
@@ -288,6 +297,17 @@ public class LabOrderService {
                     .resultDate(entity.getResultDate())
                     .build();
 
+    public static final Function<LabOrderAttachmentEntity, LabOrderAttachmentDto> toAttachmentDto = entity ->
+            LabOrderAttachmentDto.builder()
+                    .id(entity.getId())
+                    .labOrderId(entity.getLabOrder().getId())
+                    .fileName(entity.getFileName())
+                    .contentType(entity.getContentType())
+                    .fileSize(entity.getFileSize())
+                    .uploadedBy(entity.getUploadedBy())
+                    .createdAt(entity.getCreatedAt())
+                    .build();
+
     public static final Function<LabOrderEntity, LabOrderDto> toLabOrderDto = entity ->
             LabOrderDto.builder()
                     .id(entity.getId())
@@ -303,7 +323,84 @@ public class LabOrderService {
                             entity.getResults().stream()
                                     .map(LabOrderService.toLabResultDto)
                                     .collect(Collectors.toList()) : null)
+                    .attachments(entity.getAttachments() != null ?
+                            entity.getAttachments().stream()
+                                    .map(LabOrderService.toAttachmentDto)
+                                    .collect(Collectors.toList()) : null)
                     .createdAt(entity.getCreatedAt())
                     .updatedAt(entity.getUpdatedAt())
                     .build();
+
+    // Attachment methods
+
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "application/pdf", "image/jpeg", "image/png"
+    );
+
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    private void validateDoctorAccess(LabOrderEntity order) {
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null && !order.getDoctor().getId().equals(currentDoctorId)) {
+            throw new ForbiddenException("No tiene acceso a esta orden de laboratorio");
+        }
+    }
+
+    @Transactional
+    public LabOrderAttachmentDto uploadAttachment(UUID orderId, FileUpload file) {
+        log.info("Uploading attachment to lab order: {}", orderId);
+
+        LabOrderEntity order = labOrderRepository.findByIdOptional(orderId)
+                .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + orderId));
+
+        validateDoctorAccess(order);
+
+        String contentType = file.contentType();
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+            throw new BadRequestException("Tipo de archivo no permitido. Solo se aceptan: PDF, JPG, PNG");
+        }
+
+        long fileSize = file.size();
+        if (fileSize > MAX_FILE_SIZE) {
+            throw new BadRequestException("El archivo excede el tamaño máximo permitido de 10MB");
+        }
+
+        byte[] fileData;
+        try {
+            fileData = java.nio.file.Files.readAllBytes(file.filePath());
+        } catch (IOException e) {
+            log.error("Error reading uploaded file", e);
+            throw new InternalServerErrorException("Error al leer el archivo subido");
+        }
+
+        String uploadedBy = jwt.getName();
+        LabOrderAttachmentEntity attachment = fileStorageService.store(
+                order, file.fileName(), contentType, fileSize, fileData, uploadedBy
+        );
+
+        log.info("Attachment uploaded with id: {}", attachment.getId());
+        return toAttachmentDto.apply(attachment);
+    }
+
+    public LabOrderAttachmentEntity getAttachmentEntity(UUID attachmentId) {
+        LabOrderAttachmentEntity attachment = labOrderAttachmentRepository.findByIdOptional(attachmentId)
+                .orElseThrow(() -> new NotFoundException("Attachment not found with id: " + attachmentId));
+
+        validateDoctorAccess(attachment.getLabOrder());
+        return attachment;
+    }
+
+    public byte[] downloadAttachment(UUID attachmentId) {
+        log.info("Downloading attachment: {}", attachmentId);
+        LabOrderAttachmentEntity attachment = getAttachmentEntity(attachmentId);
+        return fileStorageService.retrieve(attachment);
+    }
+
+    @Transactional
+    public void deleteAttachment(UUID attachmentId) {
+        log.info("Deleting attachment: {}", attachmentId);
+        LabOrderAttachmentEntity attachment = getAttachmentEntity(attachmentId);
+        fileStorageService.delete(attachment);
+        log.info("Attachment deleted: {}", attachmentId);
+    }
 }

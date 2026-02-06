@@ -50,6 +50,10 @@ public class LabOrderEntity extends PanacheEntityBase implements Serializable {
     @OneToMany(mappedBy = "labOrder", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private List<LabResultEntity> results = new ArrayList<>();
 
+    @NotAudited
+    @OneToMany(mappedBy = "labOrder", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LabOrderAttachmentEntity> attachments = new ArrayList<>();
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

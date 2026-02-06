@@ -70,4 +70,12 @@ public class MedicalAppointmentRepository implements PanacheRepository<MedicalAp
 
         return find(query.toString(), params).list();
     }
+
+    public Optional<UUID> findChildFollowUpId(UUID parentId) {
+        return getEntityManager()
+                .createQuery("SELECT a.id FROM MedicalAppointmentEntity a WHERE a.followUpAppointment.id = :parentId", UUID.class)
+                .setParameter("parentId", parentId)
+                .getResultStream()
+                .findFirst();
+    }
 }

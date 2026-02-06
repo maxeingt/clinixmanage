@@ -3,6 +3,7 @@ package gt.com.xfactory.controller;
 import gt.com.xfactory.dto.request.*;
 import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
 import gt.com.xfactory.service.impl.*;
 import jakarta.annotation.security.*;
 import jakarta.enterprise.context.*;
@@ -10,6 +11,8 @@ import jakarta.inject.*;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
+import org.jboss.resteasy.reactive.RestForm;
+import org.jboss.resteasy.reactive.multipart.*;
 
 import java.util.*;
 
@@ -101,6 +104,36 @@ public class LabOrderController {
     @RolesAllowed({"admin", "doctor"})
     public Response deleteResult(@PathParam("resultId") UUID resultId) {
         labOrderService.deleteResult(resultId);
+        return Response.noContent().build();
+    }
+
+    // Attachment endpoints
+
+    @POST
+    @Path("/{orderId}/attachments")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RolesAllowed({"admin", "doctor"})
+    public Response uploadAttachment(@PathParam("orderId") UUID orderId, @RestForm("file") FileUpload file) {
+        LabOrderAttachmentDto created = labOrderService.uploadAttachment(orderId, file);
+        return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @GET
+    @Path("/attachments/{attachmentId}/download")
+    @RolesAllowed({"admin", "doctor"})
+    public Response downloadAttachment(@PathParam("attachmentId") UUID attachmentId) {
+        LabOrderAttachmentEntity attachment = labOrderService.getAttachmentEntity(attachmentId);
+        byte[] data = labOrderService.downloadAttachment(attachmentId);
+        return Response.ok(data, attachment.getContentType())
+                .header("Content-Disposition", "attachment; filename=\"" + attachment.getFileName() + "\"")
+                .build();
+    }
+
+    @DELETE
+    @Path("/attachments/{attachmentId}")
+    @RolesAllowed({"admin", "doctor"})
+    public Response deleteAttachment(@PathParam("attachmentId") UUID attachmentId) {
+        labOrderService.deleteAttachment(attachmentId);
         return Response.noContent().build();
     }
 }

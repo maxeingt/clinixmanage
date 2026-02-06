@@ -31,6 +31,7 @@ public class MedicalAppointmentDto implements Serializable {
     private String cancellationReason;
     private String source;
     private UUID followUpAppointmentId;
+    private UUID childFollowUpId;
     private List<AppointmentDiagnosisDto> diagnoses;
     private LocalDateTime createdAt;
 }

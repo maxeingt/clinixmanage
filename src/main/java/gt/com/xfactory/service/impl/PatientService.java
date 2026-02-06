@@ -292,7 +292,7 @@ public class PatientService {
 
         return medicalAppointmentRepository.findByPatientIdWithFilters(patientId, filter)
                 .stream()
-                .map(toMedicalAppointmentDto)
+                .map(this::toMedicalAppointmentDto)
                 .collect(Collectors.toList());
     }
 
@@ -341,7 +341,7 @@ public class PatientService {
         persistDiagnoses(appointment, request.getDiagnoses());
         log.info("Medical appointment created with id: {}", appointment.getId());
 
-        return toMedicalAppointmentDto.apply(appointment);
+        return toMedicalAppointmentDto(appointment);
     }
 
     @Transactional
@@ -395,7 +395,7 @@ public class PatientService {
         persistDiagnoses(appointment, request.getDiagnoses());
         log.info("Medical appointment updated: {}", appointmentId);
 
-        return toMedicalAppointmentDto.apply(appointment);
+        return toMedicalAppointmentDto(appointment);
     }
 
     @Transactional
@@ -417,7 +417,7 @@ public class PatientService {
         medicalAppointmentRepository.persist(appointment);
         log.info("Medical appointment reopened: {}", appointmentId);
 
-        return toMedicalAppointmentDto.apply(appointment);
+        return toMedicalAppointmentDto(appointment);
     }
 
     @Transactional
@@ -559,38 +559,40 @@ public class PatientService {
         }
     }
 
-    public static final Function<MedicalAppointmentEntity, MedicalAppointmentDto> toMedicalAppointmentDto = entity ->
-            MedicalAppointmentDto.builder()
-                    .id(entity.getId())
-                    .patientId(entity.getPatient().getId())
-                    .patientName(entity.getPatient().getFirstName() + " " + entity.getPatient().getLastName())
-                    .doctorId(entity.getDoctor().getId())
-                    .doctorName(entity.getDoctor().getFirstName() + " " + entity.getDoctor().getLastName())
-                    .clinicId(entity.getClinic().getId())
-                    .clinicName(entity.getClinic().getName())
-                    .specialtyId(entity.getSpecialty() != null ? entity.getSpecialty().getId() : null)
-                    .specialtyName(entity.getSpecialty() != null ? entity.getSpecialty().getName() : null)
-                    .status(entity.getStatus() != null ? entity.getStatus().name() : null)
-                    .appointmentDate(entity.getAppointmentDate())
-                    .reason(entity.getReason())
-                    .diagnosis(entity.getDiagnosis())
-                    .notes(entity.getNotes())
-                    .checkInTime(entity.getCheckInTime())
-                    .startTime(entity.getStartTime())
-                    .endTime(entity.getEndTime())
-                    .cancellationReason(entity.getCancellationReason())
-                    .source(entity.getSource() != null ? entity.getSource().name() : null)
-                    .followUpAppointmentId(entity.getFollowUpAppointment() != null ? entity.getFollowUpAppointment().getId() : null)
-                    .diagnoses(entity.getDiagnoses() != null ? entity.getDiagnoses().stream()
-                            .map(d -> AppointmentDiagnosisDto.builder()
-                                    .id(d.getId())
-                                    .diagnosisId(d.getDiagnosis().getId())
-                                    .code(d.getDiagnosis().getCode())
-                                    .name(d.getDiagnosis().getName())
-                                    .type(d.getType() != null ? d.getType().name() : null)
-                                    .notes(d.getNotes())
-                                    .build())
-                            .collect(Collectors.toList()) : Collections.emptyList())
-                    .createdAt(entity.getCreatedAt())
-                    .build();
+    public MedicalAppointmentDto toMedicalAppointmentDto(MedicalAppointmentEntity entity) {
+        return MedicalAppointmentDto.builder()
+                .id(entity.getId())
+                .patientId(entity.getPatient().getId())
+                .patientName(entity.getPatient().getFirstName() + " " + entity.getPatient().getLastName())
+                .doctorId(entity.getDoctor().getId())
+                .doctorName(entity.getDoctor().getFirstName() + " " + entity.getDoctor().getLastName())
+                .clinicId(entity.getClinic().getId())
+                .clinicName(entity.getClinic().getName())
+                .specialtyId(entity.getSpecialty() != null ? entity.getSpecialty().getId() : null)
+                .specialtyName(entity.getSpecialty() != null ? entity.getSpecialty().getName() : null)
+                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
+                .appointmentDate(entity.getAppointmentDate())
+                .reason(entity.getReason())
+                .diagnosis(entity.getDiagnosis())
+                .notes(entity.getNotes())
+                .checkInTime(entity.getCheckInTime())
+                .startTime(entity.getStartTime())
+                .endTime(entity.getEndTime())
+                .cancellationReason(entity.getCancellationReason())
+                .source(entity.getSource() != null ? entity.getSource().name() : null)
+                .followUpAppointmentId(entity.getFollowUpAppointment() != null ? entity.getFollowUpAppointment().getId() : null)
+                .childFollowUpId(medicalAppointmentRepository.findChildFollowUpId(entity.getId()).orElse(null))
+                .diagnoses(entity.getDiagnoses() != null ? entity.getDiagnoses().stream()
+                        .map(d -> AppointmentDiagnosisDto.builder()
+                                .id(d.getId())
+                                .diagnosisId(d.getDiagnosis().getId())
+                                .code(d.getDiagnosis().getCode())
+                                .name(d.getDiagnosis().getName())
+                                .type(d.getType() != null ? d.getType().name() : null)
+                                .notes(d.getNotes())
+                                .build())
+                        .collect(Collectors.toList()) : Collections.emptyList())
+                .createdAt(entity.getCreatedAt())
+                .build();
+    }
 }

@@ -22,6 +22,7 @@ public class LabOrderDto implements Serializable {
     private LabOrderStatus status;
     private String notes;
     private List<LabResultDto> results;
+    private List<LabOrderAttachmentDto> attachments;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

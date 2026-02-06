@@ -26,14 +26,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static gt.com.xfactory.service.impl.PatientService.toMedicalAppointmentDto;
-
 @ApplicationScoped
 @Slf4j
 public class ClinicService {
 
     @Inject
     ClinicRepository clinicRepository;
+
+    @Inject
+    PatientService patientService;
 
     @Inject
     DoctorClinicRepository doctorClinicRepository;
@@ -128,7 +129,7 @@ public class ClinicService {
 
         return medicalAppointmentRepository.findByClinicId(clinicId, filter)
                 .stream()
-                .map(toMedicalAppointmentDto)
+                .map(patientService::toMedicalAppointmentDto)
                 .collect(Collectors.toList());
     }
 }
