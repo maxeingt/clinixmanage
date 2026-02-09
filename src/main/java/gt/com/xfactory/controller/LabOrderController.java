@@ -124,8 +124,9 @@ public class LabOrderController {
     public Response downloadAttachment(@PathParam("attachmentId") UUID attachmentId) {
         LabOrderAttachmentEntity attachment = labOrderService.getAttachmentEntity(attachmentId);
         byte[] data = labOrderService.downloadAttachment(attachmentId);
+        String sanitizedFileName = attachment.getFileName().replaceAll("[^a-zA-Z0-9._-]", "_");
         return Response.ok(data, attachment.getContentType())
-                .header("Content-Disposition", "attachment; filename=\"" + attachment.getFileName() + "\"")
+                .header("Content-Disposition", "attachment; filename=\"" + sanitizedFileName + "\"")
                 .build();
     }
 
