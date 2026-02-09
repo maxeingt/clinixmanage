@@ -1,6 +1,5 @@
 package gt.com.xfactory.dto.response;
 
-import com.fasterxml.jackson.databind.util.Converter;
 import gt.com.xfactory.dto.request.CommonPageRequest;
 import gt.com.xfactory.utils.SortUtils;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;

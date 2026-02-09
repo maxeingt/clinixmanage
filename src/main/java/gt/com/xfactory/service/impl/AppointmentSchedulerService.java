@@ -40,14 +40,7 @@ public class AppointmentSchedulerService {
             medicalAppointmentRepository.persist(appointment);
             log.info("Appointment {} expired", appointment.getId());
 
-            notificationService.notify(appointment.getDoctor().getId(), NotificationDto.builder()
-                    .type("APPOINTMENT_EXPIRED")
-                    .appointmentId(appointment.getId())
-                    .patientName(appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName())
-                    .appointmentDate(appointment.getAppointmentDate())
-                    .message("La cita ha expirado automáticamente")
-                    .timestamp(LocalDateTime.now())
-                    .build());
+            notifyDoctor(appointment, "APPOINTMENT_EXPIRED", "La cita ha expirado automáticamente");
         }
 
         if (!overdue.isEmpty()) {
@@ -76,14 +69,7 @@ public class AppointmentSchedulerService {
             appointment.setNotified30Min(true);
             medicalAppointmentRepository.persist(appointment);
 
-            notificationService.notify(appointment.getDoctor().getId(), NotificationDto.builder()
-                    .type("APPOINTMENT_EXPIRING")
-                    .appointmentId(appointment.getId())
-                    .patientName(appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName())
-                    .appointmentDate(appointment.getAppointmentDate())
-                    .message("La cita expirará en 30 minutos")
-                    .timestamp(LocalDateTime.now())
-                    .build());
+            notifyDoctor(appointment, "APPOINTMENT_EXPIRING", "La cita expirará en 30 minutos");
         }
 
         // 10 min warning
@@ -102,14 +88,18 @@ public class AppointmentSchedulerService {
             appointment.setNotified10Min(true);
             medicalAppointmentRepository.persist(appointment);
 
-            notificationService.notify(appointment.getDoctor().getId(), NotificationDto.builder()
-                    .type("APPOINTMENT_EXPIRING")
-                    .appointmentId(appointment.getId())
-                    .patientName(appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName())
-                    .appointmentDate(appointment.getAppointmentDate())
-                    .message("La cita expirará en 10 minutos")
-                    .timestamp(LocalDateTime.now())
-                    .build());
+            notifyDoctor(appointment, "APPOINTMENT_EXPIRING", "La cita expirará en 10 minutos");
         }
+    }
+
+    private void notifyDoctor(MedicalAppointmentEntity appointment, String type, String message) {
+        notificationService.notify(appointment.getDoctor().getId(), NotificationDto.builder()
+                .type(type)
+                .appointmentId(appointment.getId())
+                .patientName(appointment.getPatient().getFirstName() + " " + appointment.getPatient().getLastName())
+                .appointmentDate(appointment.getAppointmentDate())
+                .message(message)
+                .timestamp(LocalDateTime.now())
+                .build());
     }
 }

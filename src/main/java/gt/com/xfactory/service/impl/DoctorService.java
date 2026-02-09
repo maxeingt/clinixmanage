@@ -47,35 +47,19 @@ public class DoctorService {
     public PageResponse<DoctorDto> getDoctors(DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
+        var fb = FilterBuilder.create()
+                .addLike(filter.firstName, "firstName")
+                .addLike(filter.lastName, "lastName")
+                .addLike(filter.mail, "email", "mail");
 
-        QueryUtils.addLikeCondition(filter.firstName, "firstName", "firstName", conditions, params);
-        QueryUtils.addLikeCondition(filter.lastName, "lastName", "lastName", conditions, params);
-        QueryUtils.addLikeCondition(filter.mail, "email", "mail", conditions, params);
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        PageResponse<DoctorDto> response = toPageResponse(doctorRepository, query, pageRequest, params, toDto);
+        PageResponse<DoctorDto> response = toPageResponse(doctorRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
 
         // Load specialties and clinics for each doctor
         for (DoctorDto doctor : response.content) {
             List<SpecialtyDto> specialties = doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId());
             doctor.setSpecialties(specialties);
 
-            List<ClinicDto> clinics = doctorClinicRepository.findByDoctorId(doctor.getId()).stream()
-                    .filter(dc -> dc.getActive() != null && dc.getActive())
-                    .map(dc -> ClinicDto.builder()
-                            .id(dc.getClinic().getId())
-                            .name(dc.getClinic().getName())
-                            .address(dc.getClinic().getAddress())
-                            .phone(dc.getClinic().getPhone())
-                            .build())
-                    .toList();
-            doctor.setClinics(clinics);
+            doctor.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(doctor.getId())));
         }
 
         return response;
@@ -88,15 +72,7 @@ public class DoctorService {
 
         DoctorDto dto = toDto.apply(doctor);
         dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(id));
-        dto.setClinics(doctorClinicRepository.findByDoctorId(id).stream()
-                .filter(dc -> dc.getActive() != null && dc.getActive())
-                .map(dc -> ClinicDto.builder()
-                        .id(dc.getClinic().getId())
-                        .name(dc.getClinic().getName())
-                        .address(dc.getClinic().getAddress())
-                        .phone(dc.getClinic().getPhone())
-                        .build())
-                .toList());
+        dto.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(id)));
         return dto;
     }
 
@@ -157,15 +133,7 @@ public class DoctorService {
 
         DoctorDto dto = toDto.apply(doctor);
         dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(id));
-        dto.setClinics(doctorClinicRepository.findByDoctorId(id).stream()
-                .filter(dc -> dc.getActive() != null && dc.getActive())
-                .map(dc -> ClinicDto.builder()
-                        .id(dc.getClinic().getId())
-                        .name(dc.getClinic().getName())
-                        .address(dc.getClinic().getAddress())
-                        .phone(dc.getClinic().getPhone())
-                        .build())
-                .toList());
+        dto.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(id)));
         return dto;
     }
 
@@ -263,15 +231,7 @@ public class DoctorService {
         doctorRepository.findByIdOptional(doctorId)
                 .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
 
-        return doctorClinicRepository.findByDoctorId(doctorId).stream()
-                .filter(dc -> dc.getActive() != null && dc.getActive())
-                .map(dc -> ClinicDto.builder()
-                        .id(dc.getClinic().getId())
-                        .name(dc.getClinic().getName())
-                        .address(dc.getClinic().getAddress())
-                        .phone(dc.getClinic().getPhone())
-                        .build())
-                .toList();
+        return getActiveClinics(doctorClinicRepository.findByDoctorId(doctorId));
     }
 
     @Transactional
@@ -344,16 +304,24 @@ public class DoctorService {
 
         DoctorDto dto = toDto.apply(doctor);
         dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId()));
-        dto.setClinics(doctorClinicRepository.findByDoctorId(doctor.getId()).stream()
-                .filter(dc -> dc.getActive() != null && dc.getActive())
-                .map(dc -> ClinicDto.builder()
-                        .id(dc.getClinic().getId())
-                        .name(dc.getClinic().getName())
-                        .address(dc.getClinic().getAddress())
-                        .phone(dc.getClinic().getPhone())
-                        .build())
-                .toList());
+        dto.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(doctor.getId())));
         return dto;
+    }
+
+    public static ClinicDto toClinicDto(DoctorClinicEntity dc) {
+        return ClinicDto.builder()
+                .id(dc.getClinic().getId())
+                .name(dc.getClinic().getName())
+                .address(dc.getClinic().getAddress())
+                .phone(dc.getClinic().getPhone())
+                .build();
+    }
+
+    public static List<ClinicDto> getActiveClinics(List<DoctorClinicEntity> doctorClinics) {
+        return doctorClinics.stream()
+                .filter(dc -> dc.getActive() != null && dc.getActive())
+                .map(DoctorService::toClinicDto)
+                .toList();
     }
 
     public static final Function<DoctorEntity, DoctorDto> toDto = entity ->

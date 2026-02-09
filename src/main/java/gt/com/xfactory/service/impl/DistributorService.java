@@ -1,27 +1,21 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.request.CommonPageRequest;
-import gt.com.xfactory.dto.request.DistributorRequest;
-import gt.com.xfactory.dto.request.filter.DistributorFilterDto;
-import gt.com.xfactory.dto.response.DistributorDto;
-import gt.com.xfactory.dto.response.PageResponse;
-import gt.com.xfactory.entity.DistributorEntity;
-import gt.com.xfactory.repository.DistributorRepository;
-import gt.com.xfactory.utils.QueryUtils;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.transaction.*;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
@@ -35,22 +29,11 @@ public class DistributorService {
     public PageResponse<DistributorDto> getDistributors(DistributorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching distributors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
+        var fb = FilterBuilder.create()
+                .addLike(filter.name, "name")
+                .addEquals(filter.active, "active");
 
-        QueryUtils.addLikeCondition(filter.name, "name", "name", conditions, params);
-
-        if (filter.active != null) {
-            conditions.add("active = :active");
-            params.put("active", filter.active);
-        }
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        return toPageResponse(distributorRepository, query, pageRequest, params, toDto);
+        return toPageResponse(distributorRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }
 
     public DistributorDto getById(UUID id) {

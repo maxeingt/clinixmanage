@@ -6,6 +6,7 @@ import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
 import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
@@ -48,27 +49,14 @@ public class LabOrderService {
     MedicalAppointmentRepository medicalAppointmentRepository;
 
     @Inject
-    JsonWebToken jwt;
+    SecurityContextService securityContextService;
 
-    @Inject
-    SecurityIdentity securityIdentity;
-
-    /**
-     * Retorna el UUID del doctor actual si el usuario tiene rol doctor.
-     * Retorna null si es admin o secretary (ven todas las órdenes).
-     */
     private UUID getCurrentDoctorId() {
-        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
-            return null;
-        }
-        String keycloakId = jwt.getSubject();
-        return doctorRepository.findByUserKeycloakId(keycloakId)
-                .map(DoctorEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        return securityContextService.getCurrentDoctorId();
     }
 
     private boolean isSecretary() {
-        return securityIdentity.hasRole("secretary") && !securityIdentity.hasRole("admin");
+        return securityContextService.hasRole("secretary") && !securityContextService.hasRole("admin");
     }
 
     private LabOrderDto mapToDto(LabOrderEntity entity) {
@@ -83,46 +71,16 @@ public class LabOrderService {
     public PageResponse<LabOrderDto> getLabOrders(LabOrderFilterDto filter, CommonPageRequest pageRequest) {
         log.info("Fetching lab orders with filter");
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
-
         UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null) {
-            conditions.add("doctor.id = :currentDoctorId");
-            params.put("currentDoctorId", currentDoctorId);
-        }
+        var fb = FilterBuilder.create()
+                .addEquals(currentDoctorId, "doctor.id", "currentDoctorId")
+                .addEquals(filter.patientId, "patient.id", "patientId")
+                .addEquals(filter.doctorId, "doctor.id", "doctorId")
+                .addEquals(filter.status, "status")
+                .addDateRange(filter.startDate, "orderDate", "startDate",
+                              filter.endDate, "orderDate", "endDate");
 
-        if (filter.patientId != null) {
-            conditions.add("patient.id = :patientId");
-            params.put("patientId", filter.patientId);
-        }
-
-        if (filter.doctorId != null) {
-            conditions.add("doctor.id = :doctorId");
-            params.put("doctorId", filter.doctorId);
-        }
-
-        if (filter.status != null) {
-            conditions.add("status = :status");
-            params.put("status", filter.status);
-        }
-
-        if (filter.startDate != null) {
-            conditions.add("orderDate >= :startDate");
-            params.put("startDate", filter.startDate);
-        }
-
-        if (filter.endDate != null) {
-            conditions.add("orderDate <= :endDate");
-            params.put("endDate", filter.endDate);
-        }
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        return toPageResponse(labOrderRepository, query, pageRequest, params, this::mapToDto);
+        return toPageResponse(labOrderRepository, fb.buildQuery(), pageRequest, fb.getParams(), this::mapToDto);
     }
 
     public List<LabOrderDto> getLabOrdersByPatientId(UUID patientId) {
@@ -373,7 +331,7 @@ public class LabOrderService {
             throw new InternalServerErrorException("Error al leer el archivo subido");
         }
 
-        String uploadedBy = jwt.getName();
+        String uploadedBy = securityContextService.getUserName();
         LabOrderAttachmentEntity attachment = fileStorageService.store(
                 order, file.fileName(), contentType, fileSize, fileData, uploadedBy
         );
