@@ -465,13 +465,6 @@ public class PatientService {
         log.info("Patient deleted: {}", patientId);
     }
 
-    private int calculateAge(LocalDate birthdate) {
-        if (birthdate == null) {
-            return 0;
-        }
-        return Period.between(birthdate, LocalDate.now()).getYears();
-    }
-
     public static final Function<PatientEntity, PatientDto> toDto = entity ->
             PatientDto.builder()
                     .id(entity.getId())
