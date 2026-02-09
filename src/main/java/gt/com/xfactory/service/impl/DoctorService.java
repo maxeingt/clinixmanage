@@ -54,12 +54,17 @@ public class DoctorService {
 
         PageResponse<DoctorDto> response = toPageResponse(doctorRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
 
-        // Load specialties and clinics for each doctor
-        for (DoctorDto doctor : response.content) {
-            List<SpecialtyDto> specialties = doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId());
-            doctor.setSpecialties(specialties);
+        // Batch load specialties and clinics (2 queries instead of N*2)
+        if (!response.content.isEmpty()) {
+            List<UUID> doctorIds = response.content.stream().map(DoctorDto::getId).toList();
 
-            doctor.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(doctor.getId())));
+            Map<UUID, List<SpecialtyDto>> specialtiesMap = doctorSpecialtyRepository.findSpecialtiesByDoctorIds(doctorIds);
+            Map<UUID, List<DoctorClinicEntity>> clinicsMap = doctorClinicRepository.findByDoctorIds(doctorIds);
+
+            for (DoctorDto doctor : response.content) {
+                doctor.setSpecialties(specialtiesMap.getOrDefault(doctor.getId(), Collections.emptyList()));
+                doctor.setClinics(getActiveClinics(clinicsMap.getOrDefault(doctor.getId(), Collections.emptyList())));
+            }
         }
 
         return response;

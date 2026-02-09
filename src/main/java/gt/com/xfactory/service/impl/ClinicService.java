@@ -1,30 +1,19 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.request.ClinicRequest;
-import gt.com.xfactory.dto.request.CommonPageRequest;
-import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
-import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
-import gt.com.xfactory.dto.response.ClinicDto;
-import gt.com.xfactory.dto.response.DoctorDto;
-import gt.com.xfactory.dto.response.MedicalAppointmentDto;
-import gt.com.xfactory.dto.response.PageResponse;
-import gt.com.xfactory.dto.response.SpecialtyDto;
-import gt.com.xfactory.entity.ClinicEntity;
-import gt.com.xfactory.repository.ClinicRepository;
-import gt.com.xfactory.repository.DoctorClinicRepository;
-import gt.com.xfactory.repository.DoctorSpecialtyRepository;
-import gt.com.xfactory.repository.MedicalAppointmentRepository;
-
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.repository.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.transaction.*;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
 @ApplicationScoped
 @Slf4j
@@ -114,10 +103,13 @@ public class ClinicService {
     public PageResponse<DoctorDto> getDoctorsByClinic(UUID clinic, DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         PageResponse<DoctorDto> response = doctorClinicRepository.findDoctorsByClinic(clinic, filter, pageRequest);
 
-        // Load specialties for each doctor
-        for (DoctorDto doctor : response.content) {
-            List<SpecialtyDto> specialties = doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId());
-            doctor.setSpecialties(specialties);
+        // Batch load specialties (1 query instead of N)
+        if (!response.content.isEmpty()) {
+            List<UUID> doctorIds = response.content.stream().map(DoctorDto::getId).toList();
+            Map<UUID, List<SpecialtyDto>> specialtiesMap = doctorSpecialtyRepository.findSpecialtiesByDoctorIds(doctorIds);
+            for (DoctorDto doctor : response.content) {
+                doctor.setSpecialties(specialtiesMap.getOrDefault(doctor.getId(), Collections.emptyList()));
+            }
         }
 
         return response;

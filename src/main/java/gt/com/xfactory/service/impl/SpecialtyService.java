@@ -45,10 +45,16 @@ public class SpecialtyService {
 
         List<DoctorEntity> doctors = doctorSpecialtyRepository.findDoctorsBySpecialtyId(specialtyId);
 
+        if (doctors.isEmpty()) return Collections.emptyList();
+
+        // Batch load specialties (1 query instead of N)
+        List<UUID> doctorIds = doctors.stream().map(DoctorEntity::getId).toList();
+        Map<UUID, List<SpecialtyDto>> specialtiesMap = doctorSpecialtyRepository.findSpecialtiesByDoctorIds(doctorIds);
+
         return doctors.stream()
                 .map(entity -> {
                     DoctorDto dto = DoctorService.toDto.apply(entity);
-                    dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(entity.getId()));
+                    dto.setSpecialties(specialtiesMap.getOrDefault(entity.getId(), Collections.emptyList()));
                     return dto;
                 })
                 .collect(Collectors.toList());

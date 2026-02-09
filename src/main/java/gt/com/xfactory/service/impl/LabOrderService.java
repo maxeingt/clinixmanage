@@ -90,11 +90,10 @@ public class LabOrderService {
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
         UUID currentDoctorId = getCurrentDoctorId();
-        return labOrderRepository.findByPatientId(patientId)
-                .stream()
-                .filter(order -> currentDoctorId == null || order.getDoctor().getId().equals(currentDoctorId))
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        List<LabOrderEntity> orders = currentDoctorId != null
+                ? labOrderRepository.findByPatientIdAndDoctorId(patientId, currentDoctorId)
+                : labOrderRepository.findByPatientId(patientId);
+        return orders.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     public LabOrderDto getLabOrderById(UUID id) {

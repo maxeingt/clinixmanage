@@ -1,14 +1,12 @@
 package gt.com.xfactory.repository;
 
-import gt.com.xfactory.dto.response.SpecialtyDto;
-import gt.com.xfactory.entity.DoctorEntity;
-import gt.com.xfactory.entity.DoctorSpecialtyEntity;
-import io.quarkus.hibernate.orm.panache.PanacheRepository;
-import jakarta.enterprise.context.ApplicationScoped;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import io.quarkus.hibernate.orm.panache.*;
+import jakarta.enterprise.context.*;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.stream.*;
 
 @ApplicationScoped
 public class DoctorSpecialtyRepository implements PanacheRepository<DoctorSpecialtyEntity> {
@@ -33,6 +31,20 @@ public class DoctorSpecialtyRepository implements PanacheRepository<DoctorSpecia
 
     public java.util.Optional<DoctorSpecialtyEntity> findByDoctorIdAndSpecialtyId(UUID doctorId, UUID specialtyId) {
         return find("id.doctorId = ?1 and id.specialtyId = ?2", doctorId, specialtyId).firstResultOptional();
+    }
+
+    public Map<UUID, List<SpecialtyDto>> findSpecialtiesByDoctorIds(List<UUID> doctorIds) {
+        if (doctorIds == null || doctorIds.isEmpty()) return Collections.emptyMap();
+        return find("id.doctorId in ?1", doctorIds)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        ds -> ds.getId().getDoctorId(),
+                        Collectors.mapping(ds -> SpecialtyDto.builder()
+                                .id(ds.getSpecialty().getId())
+                                .name(ds.getSpecialty().getName())
+                                .description(ds.getSpecialty().getDescription())
+                                .build(), Collectors.toList())
+                ));
     }
 
     public long deleteByDoctorId(UUID doctorId) {
