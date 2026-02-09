@@ -47,19 +47,12 @@ public class DoctorService {
     public PageResponse<DoctorDto> getDoctors(DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
+        var fb = FilterBuilder.create()
+                .addLike(filter.firstName, "firstName")
+                .addLike(filter.lastName, "lastName")
+                .addLike(filter.mail, "email", "mail");
 
-        QueryUtils.addLikeCondition(filter.firstName, "firstName", "firstName", conditions, params);
-        QueryUtils.addLikeCondition(filter.lastName, "lastName", "lastName", conditions, params);
-        QueryUtils.addLikeCondition(filter.mail, "email", "mail", conditions, params);
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        PageResponse<DoctorDto> response = toPageResponse(doctorRepository, query, pageRequest, params, toDto);
+        PageResponse<DoctorDto> response = toPageResponse(doctorRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
 
         // Load specialties and clinics for each doctor
         for (DoctorDto doctor : response.content) {

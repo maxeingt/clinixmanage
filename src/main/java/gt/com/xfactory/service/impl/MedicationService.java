@@ -1,32 +1,22 @@
 package gt.com.xfactory.service.impl;
 
-import org.apache.commons.lang3.StringUtils;
-import gt.com.xfactory.dto.request.CommonPageRequest;
-import gt.com.xfactory.dto.request.MedicationRequest;
-import gt.com.xfactory.dto.request.filter.MedicationFilterDto;
-import gt.com.xfactory.dto.response.MedicationDto;
-import gt.com.xfactory.dto.response.PageResponse;
-import gt.com.xfactory.entity.DistributorEntity;
-import gt.com.xfactory.entity.MedicationEntity;
-import gt.com.xfactory.entity.PharmaceuticalEntity;
-import gt.com.xfactory.repository.DistributorRepository;
-import gt.com.xfactory.repository.MedicationRepository;
-import gt.com.xfactory.repository.PharmaceuticalRepository;
-import gt.com.xfactory.utils.QueryUtils;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.transaction.*;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
+import org.apache.commons.lang3.*;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
@@ -46,44 +36,19 @@ public class MedicationService {
     public PageResponse<MedicationDto> getMedications(MedicationFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching medications with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
+        var fb = FilterBuilder.create()
+                .addCondition(StringUtils.isNotBlank(filter.search),
+                        "(LOWER(name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(activeIngredient) LIKE LOWER(CONCAT('%', :search, '%')))",
+                        "search", filter.search)
+                .addLike(filter.name, "name")
+                .addLike(filter.code, "code")
+                .addLike(filter.activeIngredient, "activeIngredient")
+                .addEquals(filter.presentation, "presentation")
+                .addEquals(filter.pharmaceuticalId, "pharmaceutical.id", "pharmaceuticalId")
+                .addEquals(filter.distributorId, "distributor.id", "distributorId")
+                .addEquals(filter.active, "active");
 
-        if (StringUtils.isNotBlank(filter.search)) {
-            conditions.add("(LOWER(name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(activeIngredient) LIKE LOWER(CONCAT('%', :search, '%')))");
-            params.put("search", filter.search);
-        }
-
-        QueryUtils.addLikeCondition(filter.name, "name", "name", conditions, params);
-        QueryUtils.addLikeCondition(filter.code, "code", "code", conditions, params);
-        QueryUtils.addLikeCondition(filter.activeIngredient, "activeIngredient", "activeIngredient", conditions, params);
-
-        if (filter.presentation != null) {
-            conditions.add("presentation = :presentation");
-            params.put("presentation", filter.presentation);
-        }
-
-        if (filter.pharmaceuticalId != null) {
-            conditions.add("pharmaceutical.id = :pharmaceuticalId");
-            params.put("pharmaceuticalId", filter.pharmaceuticalId);
-        }
-
-        if (filter.distributorId != null) {
-            conditions.add("distributor.id = :distributorId");
-            params.put("distributorId", filter.distributorId);
-        }
-
-        if (filter.active != null) {
-            conditions.add("active = :active");
-            params.put("active", filter.active);
-        }
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        return toPageResponse(medicationRepository, query, pageRequest, params, toDto);
+        return toPageResponse(medicationRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }
 
     public MedicationDto getById(UUID id) {

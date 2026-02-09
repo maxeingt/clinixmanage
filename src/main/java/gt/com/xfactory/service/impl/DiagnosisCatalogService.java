@@ -28,20 +28,12 @@ public class DiagnosisCatalogService {
     public PageResponse<DiagnosisCatalogDto> search(DiagnosisCatalogFilterDto filter, CommonPageRequest pageRequest) {
         log.info("Searching diagnosis catalog with filter: {}", filter.search);
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
+        var fb = FilterBuilder.create()
+                .addCondition(StringUtils.isNotBlank(filter.search),
+                        "(LOWER(code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(name) LIKE LOWER(CONCAT('%', :search, '%')))",
+                        "search", filter.search);
 
-        if (StringUtils.isNotBlank(filter.search)) {
-            conditions.add("(LOWER(code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(name) LIKE LOWER(CONCAT('%', :search, '%')))");
-            params.put("search", filter.search);
-        }
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        return toPageResponse(diagnosisCatalogRepository, query, pageRequest, params, toDto);
+        return toPageResponse(diagnosisCatalogRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }
 
     public DiagnosisCatalogDto getById(UUID id) {

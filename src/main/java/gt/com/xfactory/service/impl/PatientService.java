@@ -69,28 +69,18 @@ public class PatientService {
     public PageResponse<PatientDto> getPatients(PatientFilterDto filter, @Valid CommonPageRequest pageRequest) {
         log.info("Fetching patients with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
-
         UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null) {
-            conditions.add("id IN (SELECT DISTINCT a.patient.id FROM MedicalAppointmentEntity a WHERE a.doctor.id = :currentDoctorId)");
-            params.put("currentDoctorId", currentDoctorId);
-        }
+        var fb = FilterBuilder.create()
+                .addCondition(currentDoctorId != null,
+                        "id IN (SELECT DISTINCT a.patient.id FROM MedicalAppointmentEntity a WHERE a.doctor.id = :currentDoctorId)",
+                        "currentDoctorId", currentDoctorId)
+                .addCondition(StringUtils.isNotBlank(filter.name),
+                        "(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))",
+                        "name", filter.name)
+                .addLike(filter.phone, "phone")
+                .addLike(filter.maritalStatus, "maritalStatus");
 
-        if (StringUtils.isNotBlank(filter.name)) {
-            conditions.add("(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))");
-            params.put("name", filter.name);
-        }
-        QueryUtils.addLikeCondition(filter.phone, "phone", "phone", conditions, params);
-        QueryUtils.addLikeCondition(filter.maritalStatus, "maritalStatus", "maritalStatus", conditions, params);
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        return toPageResponse(patientRepository, query, pageRequest, params, toDto);
+        return toPageResponse(patientRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }
 
     @Transactional

@@ -6,6 +6,7 @@ import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
 import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
@@ -70,46 +71,16 @@ public class LabOrderService {
     public PageResponse<LabOrderDto> getLabOrders(LabOrderFilterDto filter, CommonPageRequest pageRequest) {
         log.info("Fetching lab orders with filter");
 
-        StringBuilder query = new StringBuilder();
-        Map<String, Object> params = new HashMap<>();
-        List<String> conditions = new ArrayList<>();
-
         UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null) {
-            conditions.add("doctor.id = :currentDoctorId");
-            params.put("currentDoctorId", currentDoctorId);
-        }
+        var fb = FilterBuilder.create()
+                .addEquals(currentDoctorId, "doctor.id", "currentDoctorId")
+                .addEquals(filter.patientId, "patient.id", "patientId")
+                .addEquals(filter.doctorId, "doctor.id", "doctorId")
+                .addEquals(filter.status, "status")
+                .addDateRange(filter.startDate, "orderDate", "startDate",
+                              filter.endDate, "orderDate", "endDate");
 
-        if (filter.patientId != null) {
-            conditions.add("patient.id = :patientId");
-            params.put("patientId", filter.patientId);
-        }
-
-        if (filter.doctorId != null) {
-            conditions.add("doctor.id = :doctorId");
-            params.put("doctorId", filter.doctorId);
-        }
-
-        if (filter.status != null) {
-            conditions.add("status = :status");
-            params.put("status", filter.status);
-        }
-
-        if (filter.startDate != null) {
-            conditions.add("orderDate >= :startDate");
-            params.put("startDate", filter.startDate);
-        }
-
-        if (filter.endDate != null) {
-            conditions.add("orderDate <= :endDate");
-            params.put("endDate", filter.endDate);
-        }
-
-        if (!conditions.isEmpty()) {
-            query.append(String.join(" AND ", conditions));
-        }
-
-        return toPageResponse(labOrderRepository, query, pageRequest, params, this::mapToDto);
+        return toPageResponse(labOrderRepository, fb.buildQuery(), pageRequest, fb.getParams(), this::mapToDto);
     }
 
     public List<LabOrderDto> getLabOrdersByPatientId(UUID patientId) {
