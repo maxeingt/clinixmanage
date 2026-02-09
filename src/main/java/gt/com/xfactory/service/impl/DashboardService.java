@@ -1,20 +1,15 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.response.DashboardDto;
-import gt.com.xfactory.entity.*;
-import gt.com.xfactory.entity.enums.AppointmentStatus;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
-import io.quarkus.security.identity.*;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
 import jakarta.ws.rs.*;
-import lombok.extern.slf4j.Slf4j;
-import org.eclipse.microprofile.jwt.*;
+import lombok.extern.slf4j.*;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.TemporalAdjusters;
+import java.time.*;
+import java.time.temporal.*;
 import java.util.*;
 
 @ApplicationScoped
@@ -41,69 +36,68 @@ public class DashboardService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
 
-        LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
-        LocalDateTime endOfMonth = today.plusMonths(1).withDayOfMonth(1).atStartOfDay();
-
-        List<AppointmentStatus> pendingStatuses = List.of(
-                AppointmentStatus.scheduled, AppointmentStatus.confirmed, AppointmentStatus.reopened
-        );
-
-        String baseFilter = buildBaseFilter(clinicId, doctorId);
-        Map<String, Object> baseParams = buildBaseParams(clinicId, doctorId);
-
-        long todayAppointments = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfDay and appointmentDate < :endOfDay",
-                merge(baseParams, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay)));
-
-        long todayCompleted = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfDay and appointmentDate < :endOfDay and status = :status",
-                merge(baseParams, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay, "status", AppointmentStatus.completed)));
-
-        long todayPending = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfDay and appointmentDate < :endOfDay and status in :statuses",
-                merge(baseParams, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay, "statuses", pendingStatuses)));
-
-        long todayCancelled = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfDay and appointmentDate < :endOfDay and status = :status",
-                merge(baseParams, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay, "status", AppointmentStatus.cancelled)));
-
-        long todayNoShow = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfDay and appointmentDate < :endOfDay and status = :status",
-                merge(baseParams, Map.of("startOfDay", startOfDay, "endOfDay", endOfDay, "status", AppointmentStatus.no_show)));
-
         LocalDateTime startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).atStartOfDay();
         LocalDateTime endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY)).plusDays(1).atStartOfDay();
 
-        long weeklyPatientsAttended = countDistinctPatients(baseFilter,
-                merge(baseParams, Map.of("startOfWeek", startOfWeek, "endOfWeek", endOfWeek, "status", AppointmentStatus.completed)));
+        LocalDateTime startOfMonth = today.withDayOfMonth(1).atStartOfDay();
+        LocalDateTime endOfMonth = today.plusMonths(1).withDayOfMonth(1).atStartOfDay();
 
-        long monthlyAppointments = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfMonth and appointmentDate < :endOfMonth",
-                merge(baseParams, Map.of("startOfMonth", startOfMonth, "endOfMonth", endOfMonth)));
+        String baseWhere = buildBaseWhere(clinicId, doctorId);
+        Map<String, Object> params = buildBaseParams(clinicId, doctorId);
+        params.put("startOfDay", startOfDay);
+        params.put("endOfDay", endOfDay);
+        params.put("startOfWeek", startOfWeek);
+        params.put("endOfWeek", endOfWeek);
+        params.put("startOfMonth", startOfMonth);
+        params.put("endOfMonth", endOfMonth);
+        params.put("completed", AppointmentStatus.completed);
+        params.put("cancelled", AppointmentStatus.cancelled);
+        params.put("noShow", AppointmentStatus.no_show);
+        params.put("pendingStatuses", List.of(
+                AppointmentStatus.scheduled, AppointmentStatus.confirmed, AppointmentStatus.reopened));
 
-        long monthlyCancellations = countAppointments(baseFilter
-                        + " and appointmentDate >= :startOfMonth and appointmentDate < :endOfMonth and status = :status",
-                merge(baseParams, Map.of("startOfMonth", startOfMonth, "endOfMonth", endOfMonth, "status", AppointmentStatus.cancelled)));
+        // 1 query: today metrics (total, completed, pending, cancelled, no_show) + monthly metrics (total, cancellations)
+        String jpql = "SELECT "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfDay AND m.appointmentDate < :endOfDay THEN 1 ELSE 0 END), "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfDay AND m.appointmentDate < :endOfDay AND m.status = :completed THEN 1 ELSE 0 END), "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfDay AND m.appointmentDate < :endOfDay AND m.status IN :pendingStatuses THEN 1 ELSE 0 END), "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfDay AND m.appointmentDate < :endOfDay AND m.status = :cancelled THEN 1 ELSE 0 END), "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfDay AND m.appointmentDate < :endOfDay AND m.status = :noShow THEN 1 ELSE 0 END), "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfMonth AND m.appointmentDate < :endOfMonth THEN 1 ELSE 0 END), "
+                + "SUM(CASE WHEN m.appointmentDate >= :startOfMonth AND m.appointmentDate < :endOfMonth AND m.status = :cancelled THEN 1 ELSE 0 END) "
+                + "FROM MedicalAppointmentEntity m WHERE " + baseWhere;
+
+        var mainQuery = medicalAppointmentRepository.getEntityManager().createQuery(jpql, Object[].class);
+        params.forEach(mainQuery::setParameter);
+        Object[] row = mainQuery.getSingleResult();
+
+        // 1 query: weekly distinct patients
+        String weeklyJpql = "SELECT COUNT(DISTINCT m.patient.id) FROM MedicalAppointmentEntity m WHERE "
+                + baseWhere
+                + " AND m.appointmentDate >= :startOfWeek AND m.appointmentDate < :endOfWeek AND m.status = :completed";
+        var weeklyQuery = medicalAppointmentRepository.getEntityManager().createQuery(weeklyJpql, Long.class);
+        params.forEach(weeklyQuery::setParameter);
+        long weeklyPatientsAttended = weeklyQuery.getSingleResult();
 
         return DashboardDto.builder()
-                .todayAppointments(todayAppointments)
-                .todayCompleted(todayCompleted)
-                .todayPending(todayPending)
-                .todayCancelled(todayCancelled)
-                .todayNoShow(todayNoShow)
+                .todayAppointments(toLong(row[0]))
+                .todayCompleted(toLong(row[1]))
+                .todayPending(toLong(row[2]))
+                .todayCancelled(toLong(row[3]))
+                .todayNoShow(toLong(row[4]))
                 .weeklyPatientsAttended(weeklyPatientsAttended)
-                .monthlyAppointments(monthlyAppointments)
-                .monthlyCancellations(monthlyCancellations)
+                .monthlyAppointments(toLong(row[5]))
+                .monthlyCancellations(toLong(row[6]))
                 .build();
     }
 
-    private String buildBaseFilter(UUID clinicId, UUID doctorId) {
+    private String buildBaseWhere(UUID clinicId, UUID doctorId) {
         StringBuilder sb = new StringBuilder("1 = 1");
         if (clinicId != null) {
-            sb.append(" and clinic.id = :clinicId");
+            sb.append(" AND m.clinic.id = :clinicId");
         }
         if (doctorId != null) {
-            sb.append(" and doctor.id = :doctorId");
+            sb.append(" AND m.doctor.id = :doctorId");
         }
         return sb.toString();
     }
@@ -119,22 +113,7 @@ public class DashboardService {
         return params;
     }
 
-    private long countDistinctPatients(String baseFilter, Map<String, Object> params) {
-        String jpql = "select count(distinct m.patient.id) from MedicalAppointmentEntity m where "
-                + baseFilter.replace("clinic.", "m.clinic.").replace("doctor.", "m.doctor.")
-                + " and m.appointmentDate >= :startOfWeek and m.appointmentDate < :endOfWeek and m.status = :status";
-        var query = medicalAppointmentRepository.getEntityManager().createQuery(jpql, Long.class);
-        params.forEach(query::setParameter);
-        return query.getSingleResult();
-    }
-
-    private long countAppointments(String query, Map<String, Object> params) {
-        return medicalAppointmentRepository.count(query, params);
-    }
-
-    private Map<String, Object> merge(Map<String, Object> base, Map<String, Object> extra) {
-        Map<String, Object> merged = new HashMap<>(base);
-        merged.putAll(extra);
-        return merged;
+    private long toLong(Object value) {
+        return value != null ? ((Number) value).longValue() : 0L;
     }
 }

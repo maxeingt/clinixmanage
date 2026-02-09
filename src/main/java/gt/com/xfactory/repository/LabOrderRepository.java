@@ -13,6 +13,10 @@ public class LabOrderRepository implements PanacheRepository<LabOrderEntity> {
         return find("patient.id", patientId).list();
     }
 
+    public List<LabOrderEntity> findByPatientIdAndDoctorId(UUID patientId, UUID doctorId) {
+        return find("patient.id = ?1 AND doctor.id = ?2", patientId, doctorId).list();
+    }
+
     public List<LabOrderEntity> findByDoctorId(UUID doctorId) {
         return find("doctor.id", doctorId).list();
     }

@@ -16,6 +16,10 @@ public class MedicalRecordRepository implements PanacheRepository<MedicalRecordE
         return find("patient.id", patientId).list();
     }
 
+    public List<MedicalRecordEntity> findByPatientIdAndDoctorId(UUID patientId, UUID doctorId) {
+        return find("patient.id = ?1 AND doctor.id = ?2", patientId, doctorId).list();
+    }
+
     public List<MedicalRecordEntity> findByAppointmentId(UUID appointmentId) {
         return find("appointment.id", appointmentId).list();
     }

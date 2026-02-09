@@ -16,6 +16,10 @@ public class PrescriptionRepository implements PanacheRepository<PrescriptionEnt
         return find("patient.id", patientId).list();
     }
 
+    public List<PrescriptionEntity> findByPatientIdAndDoctorId(UUID patientId, UUID doctorId) {
+        return find("patient.id = ?1 AND doctor.id = ?2", patientId, doctorId).list();
+    }
+
     public List<PrescriptionEntity> findByMedicalRecordId(UUID medicalRecordId) {
         return find("medicalRecord.id", medicalRecordId).list();
     }
@@ -26,6 +30,10 @@ public class PrescriptionRepository implements PanacheRepository<PrescriptionEnt
 
     public List<PrescriptionEntity> findActiveByPatientId(UUID patientId) {
         return find("patient.id = ?1 AND expiryDate >= ?2", patientId, LocalDate.now()).list();
+    }
+
+    public List<PrescriptionEntity> findActiveByPatientIdAndDoctorId(UUID patientId, UUID doctorId) {
+        return find("patient.id = ?1 AND doctor.id = ?2 AND expiryDate >= ?3", patientId, doctorId, LocalDate.now()).list();
     }
 
     public Optional<PrescriptionEntity> findByIdOptional(UUID id) {

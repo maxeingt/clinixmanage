@@ -63,11 +63,10 @@ public class MedicalRecordService {
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
         UUID currentDoctorId = getCurrentDoctorId();
-        Stream<MedicalRecordEntity> stream = medicalRecordRepository.findByPatientId(patientId).stream();
-        if (currentDoctorId != null) {
-            stream = stream.filter(r -> r.getDoctor().getId().equals(currentDoctorId));
-        }
-        return stream.map(toMedicalRecordDto).collect(Collectors.toList());
+        List<MedicalRecordEntity> records = currentDoctorId != null
+                ? medicalRecordRepository.findByPatientIdAndDoctorId(patientId, currentDoctorId)
+                : medicalRecordRepository.findByPatientId(patientId);
+        return records.stream().map(toMedicalRecordDto).collect(Collectors.toList());
     }
 
     public List<MedicalRecordDto> getMedicalRecordsByAppointmentId(UUID appointmentId) {
@@ -215,11 +214,10 @@ public class MedicalRecordService {
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
         UUID currentDoctorId = getCurrentDoctorId();
-        Stream<PrescriptionEntity> stream = prescriptionRepository.findByPatientId(patientId).stream();
-        if (currentDoctorId != null) {
-            stream = stream.filter(p -> p.getDoctor().getId().equals(currentDoctorId));
-        }
-        return stream.map(toPrescriptionDto).collect(Collectors.toList());
+        List<PrescriptionEntity> prescriptions = currentDoctorId != null
+                ? prescriptionRepository.findByPatientIdAndDoctorId(patientId, currentDoctorId)
+                : prescriptionRepository.findByPatientId(patientId);
+        return prescriptions.stream().map(toPrescriptionDto).collect(Collectors.toList());
     }
 
     public List<PrescriptionDto> getActivePrescriptionsByPatientId(UUID patientId) {
@@ -229,11 +227,10 @@ public class MedicalRecordService {
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
 
         UUID currentDoctorId = getCurrentDoctorId();
-        Stream<PrescriptionEntity> stream = prescriptionRepository.findActiveByPatientId(patientId).stream();
-        if (currentDoctorId != null) {
-            stream = stream.filter(p -> p.getDoctor().getId().equals(currentDoctorId));
-        }
-        return stream.map(toPrescriptionDto).collect(Collectors.toList());
+        List<PrescriptionEntity> prescriptions = currentDoctorId != null
+                ? prescriptionRepository.findActiveByPatientIdAndDoctorId(patientId, currentDoctorId)
+                : prescriptionRepository.findActiveByPatientId(patientId);
+        return prescriptions.stream().map(toPrescriptionDto).collect(Collectors.toList());
     }
 
     public List<PrescriptionDto> getPrescriptionsByMedicalRecordId(UUID medicalRecordId) {

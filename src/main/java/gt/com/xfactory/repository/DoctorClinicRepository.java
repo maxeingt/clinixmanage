@@ -17,10 +17,8 @@ import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import jakarta.transaction.Transactional;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.*;
 
 @ApplicationScoped
 public class DoctorClinicRepository implements PanacheRepository<DoctorClinicEntity> {
@@ -90,6 +88,13 @@ public class DoctorClinicRepository implements PanacheRepository<DoctorClinicEnt
 
     public List<DoctorClinicEntity> findByDoctorId(UUID doctorId) {
         return list("id.doctorId", doctorId);
+    }
+
+    public Map<UUID, List<DoctorClinicEntity>> findByDoctorIds(List<UUID> doctorIds) {
+        if (doctorIds == null || doctorIds.isEmpty()) return Collections.emptyMap();
+        return list("id.doctorId in ?1", doctorIds)
+                .stream()
+                .collect(Collectors.groupingBy(dc -> dc.getId().getDoctorId()));
     }
 
     public long deleteByDoctorId(UUID doctorId) {
