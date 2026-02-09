@@ -25,22 +25,10 @@ public class DashboardService {
     MedicalAppointmentRepository medicalAppointmentRepository;
 
     @Inject
-    DoctorRepository doctorRepository;
-
-    @Inject
-    SecurityIdentity securityIdentity;
-
-    @Inject
-    JsonWebToken jwt;
+    SecurityContextService securityContextService;
 
     private UUID getCurrentDoctorId() {
-        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
-            return null;
-        }
-        String keycloakId = jwt.getSubject();
-        return doctorRepository.findByUserKeycloakId(keycloakId)
-                .map(DoctorEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        return securityContextService.getCurrentDoctorId();
     }
 
     public DashboardDto getDashboardMetrics(UUID clinicId, UUID doctorId) {

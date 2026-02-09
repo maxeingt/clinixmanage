@@ -48,27 +48,14 @@ public class LabOrderService {
     MedicalAppointmentRepository medicalAppointmentRepository;
 
     @Inject
-    JsonWebToken jwt;
+    SecurityContextService securityContextService;
 
-    @Inject
-    SecurityIdentity securityIdentity;
-
-    /**
-     * Retorna el UUID del doctor actual si el usuario tiene rol doctor.
-     * Retorna null si es admin o secretary (ven todas las órdenes).
-     */
     private UUID getCurrentDoctorId() {
-        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
-            return null;
-        }
-        String keycloakId = jwt.getSubject();
-        return doctorRepository.findByUserKeycloakId(keycloakId)
-                .map(DoctorEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        return securityContextService.getCurrentDoctorId();
     }
 
     private boolean isSecretary() {
-        return securityIdentity.hasRole("secretary") && !securityIdentity.hasRole("admin");
+        return securityContextService.hasRole("secretary") && !securityContextService.hasRole("admin");
     }
 
     private LabOrderDto mapToDto(LabOrderEntity entity) {
@@ -373,7 +360,7 @@ public class LabOrderService {
             throw new InternalServerErrorException("Error al leer el archivo subido");
         }
 
-        String uploadedBy = jwt.getName();
+        String uploadedBy = securityContextService.getUserName();
         LabOrderAttachmentEntity attachment = fileStorageService.store(
                 order, file.fileName(), contentType, fileSize, fileData, uploadedBy
         );

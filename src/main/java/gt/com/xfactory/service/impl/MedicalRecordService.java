@@ -50,19 +50,10 @@ public class MedicalRecordService {
     MedicationRepository medicationRepository;
 
     @Inject
-    JsonWebToken jwt;
-
-    @Inject
-    SecurityIdentity securityIdentity;
+    SecurityContextService securityContextService;
 
     private UUID getCurrentDoctorId() {
-        if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
-            return null;
-        }
-        String keycloakId = jwt.getSubject();
-        return doctorRepository.findByUserKeycloakId(keycloakId)
-                .map(DoctorEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        return securityContextService.getCurrentDoctorId();
     }
 
     public List<MedicalRecordDto> getMedicalRecordsByPatientId(UUID patientId) {
