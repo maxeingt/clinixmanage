@@ -1,22 +1,16 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.response.DoctorDto;
-import gt.com.xfactory.dto.response.SpecialtyDto;
-import gt.com.xfactory.entity.DoctorEntity;
-import gt.com.xfactory.entity.SpecialtyEntity;
-import gt.com.xfactory.repository.DoctorSpecialtyRepository;
-import gt.com.xfactory.repository.SpecialtyRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.repository.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
 
-import java.time.LocalDate;
-import java.time.Period;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.*;
+import java.util.function.*;
+import java.util.stream.*;
 
 @ApplicationScoped
 @Slf4j
@@ -46,7 +40,6 @@ public class SpecialtyService {
     public List<DoctorDto> getDoctorsBySpecialtyId(UUID specialtyId) {
         log.info("Fetching doctors by specialty id: {}", specialtyId);
 
-        // Verify specialty exists
         specialtyRepository.findByIdOptional(specialtyId)
                 .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + specialtyId));
 
@@ -54,8 +47,7 @@ public class SpecialtyService {
 
         return doctors.stream()
                 .map(entity -> {
-                    DoctorDto dto = toDoctorDto.apply(entity);
-                    // Load specialties for each doctor
+                    DoctorDto dto = DoctorService.toDto.apply(entity);
                     dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(entity.getId()));
                     return dto;
                 })
@@ -68,21 +60,4 @@ public class SpecialtyService {
                     .name(entity.getName())
                     .description(entity.getDescription())
                     .build();
-
-    public static final Function<DoctorEntity, DoctorDto> toDoctorDto = entity -> {
-        int age = 0;
-        if (entity.getBirthdate() != null) {
-            age = Period.between(entity.getBirthdate(), LocalDate.now()).getYears();
-        }
-        return DoctorDto.builder()
-                .id(entity.getId())
-                .firstName(entity.getFirstName())
-                .lastName(entity.getLastName())
-                .birthdate(entity.getBirthdate())
-                .age(age)
-                .phone(entity.getPhone())
-                .address(entity.getAddress())
-                .mail(entity.getEmail())
-                .build();
-    };
 }
