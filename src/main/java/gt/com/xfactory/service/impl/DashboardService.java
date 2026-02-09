@@ -43,17 +43,18 @@ public class DashboardService {
         LocalDateTime endOfMonth = today.plusMonths(1).withDayOfMonth(1).atStartOfDay();
 
         String baseWhere = buildBaseWhere(clinicId, doctorId);
-        Map<String, Object> params = buildBaseParams(clinicId, doctorId);
-        params.put("startOfDay", startOfDay);
-        params.put("endOfDay", endOfDay);
-        params.put("startOfWeek", startOfWeek);
-        params.put("endOfWeek", endOfWeek);
-        params.put("startOfMonth", startOfMonth);
-        params.put("endOfMonth", endOfMonth);
-        params.put("completed", AppointmentStatus.completed);
-        params.put("cancelled", AppointmentStatus.cancelled);
-        params.put("noShow", AppointmentStatus.no_show);
-        params.put("pendingStatuses", List.of(
+        Map<String, Object> baseParams = buildBaseParams(clinicId, doctorId);
+
+        // Params for main query (today + monthly)
+        Map<String, Object> mainParams = new HashMap<>(baseParams);
+        mainParams.put("startOfDay", startOfDay);
+        mainParams.put("endOfDay", endOfDay);
+        mainParams.put("startOfMonth", startOfMonth);
+        mainParams.put("endOfMonth", endOfMonth);
+        mainParams.put("completed", AppointmentStatus.completed);
+        mainParams.put("cancelled", AppointmentStatus.cancelled);
+        mainParams.put("noShow", AppointmentStatus.no_show);
+        mainParams.put("pendingStatuses", List.of(
                 AppointmentStatus.scheduled, AppointmentStatus.confirmed, AppointmentStatus.reopened));
 
         // 1 query: today metrics (total, completed, pending, cancelled, no_show) + monthly metrics (total, cancellations)
@@ -68,15 +69,20 @@ public class DashboardService {
                 + "FROM MedicalAppointmentEntity m WHERE " + baseWhere;
 
         var mainQuery = medicalAppointmentRepository.getEntityManager().createQuery(jpql, Object[].class);
-        params.forEach(mainQuery::setParameter);
+        mainParams.forEach(mainQuery::setParameter);
         Object[] row = mainQuery.getSingleResult();
 
         // 1 query: weekly distinct patients
+        Map<String, Object> weeklyParams = new HashMap<>(baseParams);
+        weeklyParams.put("startOfWeek", startOfWeek);
+        weeklyParams.put("endOfWeek", endOfWeek);
+        weeklyParams.put("completed", AppointmentStatus.completed);
+
         String weeklyJpql = "SELECT COUNT(DISTINCT m.patient.id) FROM MedicalAppointmentEntity m WHERE "
                 + baseWhere
                 + " AND m.appointmentDate >= :startOfWeek AND m.appointmentDate < :endOfWeek AND m.status = :completed";
         var weeklyQuery = medicalAppointmentRepository.getEntityManager().createQuery(weeklyJpql, Long.class);
-        params.forEach(weeklyQuery::setParameter);
+        weeklyParams.forEach(weeklyQuery::setParameter);
         long weeklyPatientsAttended = weeklyQuery.getSingleResult();
 
         return DashboardDto.builder()
