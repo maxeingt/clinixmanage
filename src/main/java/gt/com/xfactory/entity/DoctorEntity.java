@@ -1,14 +1,12 @@
 package gt.com.xfactory.entity;
 
-import gt.com.xfactory.dto.request.LocalDateAdapter;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.*;
 
-import javax.json.bind.annotation.JsonbTypeAdapter;
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Getter
 @Setter
@@ -24,7 +22,6 @@ public class DoctorEntity implements Serializable {
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
-    @JsonbTypeAdapter(LocalDateAdapter.class)
     private LocalDate birthdate;
     @Column(name = "first_name")
     private String firstName;

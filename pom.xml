@@ -51,7 +51,6 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.6.0</version> <!-- revisa la última -->
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -74,11 +73,6 @@
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.json.bind</groupId>
-            <artifactId>jakarta.json.bind-api</artifactId>
-            <version>1.0.2</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
