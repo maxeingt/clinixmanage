@@ -101,18 +101,22 @@ public class ClinicService {
     }
 
     public PageResponse<DoctorDto> getDoctorsByClinic(UUID clinic, DoctorFilterDto filter, @Valid CommonPageRequest pageRequest) {
-        PageResponse<DoctorDto> response = doctorClinicRepository.findDoctorsByClinic(clinic, filter, pageRequest);
+        PageResponse<DoctorEntity> entityResponse = doctorClinicRepository.findDoctorsByClinic(clinic, filter, pageRequest);
+
+        List<DoctorDto> dtos = entityResponse.content.stream()
+                .map(DoctorService.toDto)
+                .toList();
 
         // Batch load specialties (1 query instead of N)
-        if (!response.content.isEmpty()) {
-            List<UUID> doctorIds = response.content.stream().map(DoctorDto::getId).toList();
+        if (!dtos.isEmpty()) {
+            List<UUID> doctorIds = dtos.stream().map(DoctorDto::getId).toList();
             Map<UUID, List<SpecialtyDto>> specialtiesMap = DoctorService.toSpecialtyDtoMap(doctorSpecialtyRepository.findByDoctorIds(doctorIds));
-            for (DoctorDto doctor : response.content) {
+            for (DoctorDto doctor : dtos) {
                 doctor.setSpecialties(specialtiesMap.getOrDefault(doctor.getId(), Collections.emptyList()));
             }
         }
 
-        return response;
+        return new PageResponse<>(dtos, entityResponse.currentPage, entityResponse.totalPages, entityResponse.totalItems);
     }
 
     public List<MedicalAppointmentDto> getAppointmentsByClinic(UUID clinicId, MedicalAppointmentFilterDto filter) {

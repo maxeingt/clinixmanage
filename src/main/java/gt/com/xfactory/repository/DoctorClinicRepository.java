@@ -1,21 +1,15 @@
 package gt.com.xfactory.repository;
 
-import gt.com.xfactory.dto.response.DoctorDto;
-import gt.com.xfactory.dto.response.PageResponse;
-import gt.com.xfactory.entity.DoctorClinicEntity;
-import gt.com.xfactory.entity.DoctorEntity;
-import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
-import gt.com.xfactory.dto.request.CommonPageRequest;
-import gt.com.xfactory.service.impl.DoctorService;
-import gt.com.xfactory.utils.QueryUtils;
-import gt.com.xfactory.utils.SortUtils;
-import io.quarkus.hibernate.orm.panache.PanacheRepository;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.TypedQuery;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
+import gt.com.xfactory.utils.*;
+import io.quarkus.hibernate.orm.panache.*;
+import jakarta.enterprise.context.*;
+import jakarta.persistence.*;
 import jakarta.persistence.criteria.*;
-import jakarta.transaction.Transactional;
+import jakarta.transaction.*;
 
 import java.util.*;
 import java.util.stream.*;
@@ -27,7 +21,7 @@ public class DoctorClinicRepository implements PanacheRepository<DoctorClinicEnt
     EntityManager em;
 
     @Transactional
-    public PageResponse<DoctorDto> findDoctorsByClinic(UUID clinicId, DoctorFilterDto filter, CommonPageRequest pageRequest) {
+    public PageResponse<DoctorEntity> findDoctorsByClinic(UUID clinicId, DoctorFilterDto filter, CommonPageRequest pageRequest) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
 
 // Total count
@@ -60,8 +54,7 @@ public class DoctorClinicRepository implements PanacheRepository<DoctorClinicEnt
         query.setFirstResult(pageRequest.getPage() * pageRequest.getSize());
         query.setMaxResults(pageRequest.getSize());
 
-        List<DoctorDto> results = query.getResultList().stream()
-                .map(DoctorService.toDto).toList();
+        List<DoctorEntity> results = query.getResultList();
 
         return new PageResponse<>(results, total.intValue(), pageRequest.getPage(), pageRequest.getSize());
 
