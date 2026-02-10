@@ -1,11 +1,13 @@
 package gt.com.xfactory.dto.request.filter;
 
-import gt.com.xfactory.entity.enums.AppointmentStatus;
-import jakarta.ws.rs.QueryParam;
+import gt.com.xfactory.entity.enums.*;
+import jakarta.ws.rs.*;
+import lombok.*;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.*;
+import java.util.*;
 
+@Data
 public class MedicalAppointmentFilterDto {
 
     @QueryParam("doctorId")

@@ -1,5 +1,6 @@
 package gt.com.xfactory.entity;
 
+import io.quarkus.hibernate.orm.panache.*;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.*;
@@ -16,7 +17,7 @@ import java.util.*;
 @Table(name = "doctor")
 @AllArgsConstructor
 @NoArgsConstructor
-public class DoctorEntity implements Serializable {
+public class DoctorEntity extends PanacheEntityBase implements Serializable {
 
     @Id
     @Column(name = "id")
@@ -31,11 +32,11 @@ public class DoctorEntity implements Serializable {
     private String email;
     private String phone;
     @Column(name = "created_at")
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
     @Column(name = "created_by")
     private String createdBy;
     @Column(name = "updated_at")
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
     @Column(name = "updated_by")
     private String updatedBy;
 

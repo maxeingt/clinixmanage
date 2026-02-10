@@ -1,8 +1,10 @@
 package gt.com.xfactory.dto.request.filter;
 
-import jakarta.validation.constraints.Pattern;
-import jakarta.ws.rs.QueryParam;
+import jakarta.validation.constraints.*;
+import jakarta.ws.rs.*;
+import lombok.*;
 
+@Data
 public class PatientFilterDto {
     @QueryParam("name")
     @Pattern(regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñ\\s'-]{1,50}$", message = "Name contains invalid characters.")

@@ -92,7 +92,7 @@ public class DoctorService {
         doctor.setAddress(request.getAddress());
         doctor.setEmail(request.getMail());
         doctor.setPhone(request.getPhone());
-        doctor.setCreatedAt(LocalDate.now());
+        doctor.setCreatedAt(LocalDateTime.now());
 
         if (request.getMail() != null) {
             userRepository.findByEmail(request.getMail()).ifPresent(doctor::setUser);
@@ -117,7 +117,7 @@ public class DoctorService {
         doctor.setAddress(request.getAddress());
         doctor.setEmail(request.getMail());
         doctor.setPhone(request.getPhone());
-        doctor.setUpdatedAt(LocalDate.now());
+        doctor.setUpdatedAt(LocalDateTime.now());
 
         // Sincronizar email en usuario vinculado
         if (doctor.getUser() != null && request.getMail() != null
