@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import jakarta.ws.rs.*;
 import lombok.*;
 
+import java.time.*;
+
 @Data
 public class PatientFilterDto {
     @QueryParam("name")
@@ -16,4 +18,10 @@ public class PatientFilterDto {
 
     @QueryParam("maritalStatus")
     public String maritalStatus;
+
+    @QueryParam("appointmentDateFrom")
+    public LocalDateTime appointmentDateFrom;
+
+    @QueryParam("appointmentDateTo")
+    public LocalDateTime appointmentDateTo;
 }

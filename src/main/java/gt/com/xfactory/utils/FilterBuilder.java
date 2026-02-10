@@ -42,6 +42,14 @@ public class FilterBuilder {
         return this;
     }
 
+    public FilterBuilder addCondition(boolean condition, String jpql, Map<String, Object> multiParams) {
+        if (condition) {
+            conditions.add(jpql);
+            params.putAll(multiParams);
+        }
+        return this;
+    }
+
     public FilterBuilder addDateRange(Object startDate, String startField, String startParam,
                                       Object endDate, String endField, String endParam) {
         if (startDate != null) {

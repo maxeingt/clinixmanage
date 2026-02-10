@@ -52,11 +52,31 @@ public class PatientService {
         log.info("Fetching patients with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
         UUID currentDoctorId = getCurrentDoctorId();
-        var fb = FilterBuilder.create()
-                .addCondition(currentDoctorId != null,
-                        "id IN (SELECT DISTINCT a.patient.id FROM MedicalAppointmentEntity a WHERE a.doctor.id = :currentDoctorId)",
-                        "currentDoctorId", currentDoctorId)
-                .addCondition(StringUtils.isNotBlank(filter.name),
+        var fb = FilterBuilder.create();
+
+        // Subquery: filter patients by doctor and/or appointment date range
+        boolean needsAppointmentFilter = currentDoctorId != null || filter.appointmentDateFrom != null || filter.appointmentDateTo != null;
+        if (needsAppointmentFilter) {
+            List<String> subConditions = new ArrayList<>();
+            Map<String, Object> subParams = new HashMap<>();
+            if (currentDoctorId != null) {
+                subConditions.add("a.doctor.id = :currentDoctorId");
+                subParams.put("currentDoctorId", currentDoctorId);
+            }
+            if (filter.appointmentDateFrom != null) {
+                subConditions.add("a.appointmentDate >= :appointmentDateFrom");
+                subParams.put("appointmentDateFrom", filter.appointmentDateFrom);
+            }
+            if (filter.appointmentDateTo != null) {
+                subConditions.add("a.appointmentDate <= :appointmentDateTo");
+                subParams.put("appointmentDateTo", filter.appointmentDateTo);
+            }
+            String subquery = "id IN (SELECT DISTINCT a.patient.id FROM MedicalAppointmentEntity a WHERE "
+                    + String.join(" AND ", subConditions) + ")";
+            fb.addCondition(true, subquery, subParams);
+        }
+
+        fb.addCondition(StringUtils.isNotBlank(filter.name),
                         "(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))",
                         "name", filter.name)
                 .addLike(filter.phone, "phone")
