@@ -22,6 +22,9 @@ public class MedicalRecordController {
     MedicalRecordService medicalRecordService;
 
     @Inject
+    PrescriptionService prescriptionService;
+
+    @Inject
     PdfService pdfService;
 
     @GET
@@ -93,19 +96,19 @@ public class MedicalRecordController {
     @GET
     @Path("/prescriptions/patient/{patientId}")
     public List<PrescriptionDto> getPrescriptionsByPatientId(@PathParam("patientId") UUID patientId) {
-        return medicalRecordService.getPrescriptionsByPatientId(patientId);
+        return prescriptionService.getPrescriptionsByPatientId(patientId);
     }
 
     @GET
     @Path("/prescriptions/patient/{patientId}/active")
     public List<PrescriptionDto> getActivePrescriptionsByPatientId(@PathParam("patientId") UUID patientId) {
-        return medicalRecordService.getActivePrescriptionsByPatientId(patientId);
+        return prescriptionService.getActivePrescriptionsByPatientId(patientId);
     }
 
     @GET
     @Path("/{recordId}/prescriptions")
     public List<PrescriptionDto> getPrescriptionsByMedicalRecordId(@PathParam("recordId") UUID medicalRecordId) {
-        return medicalRecordService.getPrescriptionsByMedicalRecordId(medicalRecordId);
+        return prescriptionService.getPrescriptionsByMedicalRecordId(medicalRecordId);
     }
 
     @POST
@@ -113,7 +116,7 @@ public class MedicalRecordController {
     @Consumes(MediaType.APPLICATION_JSON)
     @RolesAllowed({"admin", "doctor"})
     public Response createPrescription(@Valid PrescriptionRequest request) {
-        PrescriptionDto created = medicalRecordService.createPrescription(request);
+        PrescriptionDto created = prescriptionService.createPrescription(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
@@ -121,7 +124,7 @@ public class MedicalRecordController {
     @Path("/prescriptions/{id}/pdf")
     @Produces("application/pdf")
     public Response getPrescriptionPdf(@PathParam("id") UUID prescriptionId) {
-        PrescriptionDto prescription = medicalRecordService.getPrescriptionById(prescriptionId);
+        PrescriptionDto prescription = prescriptionService.getPrescriptionById(prescriptionId);
         byte[] pdf = pdfService.generatePrescriptionPdf(prescription);
         return Response.ok(pdf, "application/pdf")
                 .header("Content-Disposition", "attachment; filename=\"receta-" + prescriptionId + ".pdf\"")
@@ -132,7 +135,7 @@ public class MedicalRecordController {
     @Path("/prescriptions/{id}")
     @RolesAllowed({"admin", "doctor"})
     public Response deletePrescription(@PathParam("id") UUID prescriptionId) {
-        medicalRecordService.deletePrescription(prescriptionId);
+        prescriptionService.deletePrescription(prescriptionId);
         return Response.noContent().build();
     }
 }

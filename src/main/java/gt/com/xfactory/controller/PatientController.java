@@ -23,6 +23,9 @@ public class PatientController {
     @Inject
     PatientService patientService;
 
+    @Inject
+    MedicalAppointmentService medicalAppointmentService;
+
     @GET
     public PageResponse<PatientDto> getPatients(
             @Valid @BeanParam PatientFilterDto filter,
@@ -90,7 +93,7 @@ public class PatientController {
     public List<MedicalAppointmentDto> getMedicalAppointments(
             @PathParam("id") UUID patientId,
             @BeanParam MedicalAppointmentFilterDto filter) {
-        return patientService.getMedicalAppointmentsByPatientId(patientId, filter);
+        return medicalAppointmentService.getMedicalAppointmentsByPatientId(patientId, filter);
     }
 
     @POST
@@ -100,7 +103,7 @@ public class PatientController {
             @PathParam("id") UUID patientId,
             @Valid MedicalAppointmentRequest request) {
         request.setPatientId(patientId);
-        MedicalAppointmentDto created = patientService.createMedicalAppointment(request);
+        MedicalAppointmentDto created = medicalAppointmentService.createMedicalAppointment(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
@@ -112,7 +115,7 @@ public class PatientController {
             @PathParam("appointmentId") UUID appointmentId,
             @Valid MedicalAppointmentRequest request) {
         request.setPatientId(patientId);
-        return patientService.updateMedicalAppointment(appointmentId, request);
+        return medicalAppointmentService.updateMedicalAppointment(appointmentId, request);
     }
 
     @PUT
@@ -122,7 +125,7 @@ public class PatientController {
             @PathParam("id") UUID patientId,
             @PathParam("appointmentId") UUID appointmentId,
             @Valid ReopenAppointmentRequest request) {
-        return patientService.reopenMedicalAppointment(appointmentId, request);
+        return medicalAppointmentService.reopenMedicalAppointment(appointmentId, request);
     }
 
     @DELETE
@@ -130,7 +133,7 @@ public class PatientController {
     public Response deleteMedicalAppointment(
             @PathParam("id") UUID patientId,
             @PathParam("appointmentId") UUID appointmentId) {
-        patientService.deleteMedicalAppointment(appointmentId);
+        medicalAppointmentService.deleteMedicalAppointment(appointmentId);
         return Response.noContent().build();
     }
 }

@@ -23,7 +23,7 @@ public class ClinicService {
     ClinicRepository clinicRepository;
 
     @Inject
-    PatientService patientService;
+    MedicalAppointmentService medicalAppointmentService;
 
     @Inject
     DoctorClinicRepository doctorClinicRepository;
@@ -125,7 +125,7 @@ public class ClinicService {
 
         return medicalAppointmentRepository.findByClinicId(clinicId, filter)
                 .stream()
-                .map(patientService::toMedicalAppointmentDto)
+                .map(medicalAppointmentService::toMedicalAppointmentDto)
                 .collect(Collectors.toList());
     }
 }
