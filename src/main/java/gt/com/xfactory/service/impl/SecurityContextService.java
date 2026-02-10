@@ -22,6 +22,9 @@ public class SecurityContextService {
     JsonWebToken jwt;
 
     @Inject
+    UserRepository userRepository;
+
+    @Inject
     DoctorRepository doctorRepository;
 
     /**
@@ -48,5 +51,31 @@ public class SecurityContextService {
 
     public String getSubject() {
         return jwt.getSubject();
+    }
+
+    public UUID getCurrentUserId() {
+        String keycloakId = jwt.getSubject();
+        return userRepository.findByKeycloakId(keycloakId)
+                .map(UserEntity::getId)
+                .orElseThrow(() -> new ForbiddenException("Usuario no encontrado"));
+    }
+
+    public void validateOwnAccess(UUID requestedUserId) {
+        if (securityIdentity.hasRole("admin")) return;
+        UUID currentUserId = getCurrentUserId();
+        if (!requestedUserId.equals(currentUserId)) {
+            throw new ForbiddenException("No tiene acceso a este recurso");
+        }
+    }
+
+    public void validateOwnDoctorAccess(UUID requestedDoctorId) {
+        if (securityIdentity.hasRole("admin")) return;
+        String keycloakId = jwt.getSubject();
+        UUID currentDoctorId = doctorRepository.findByUserKeycloakId(keycloakId)
+                .map(DoctorEntity::getId)
+                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        if (!requestedDoctorId.equals(currentDoctorId)) {
+            throw new ForbiddenException("No tiene acceso a las notificaciones de otro doctor");
+        }
     }
 }
