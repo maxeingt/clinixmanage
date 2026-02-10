@@ -339,18 +339,23 @@ public class LabOrderService {
         return toAttachmentDto.apply(attachment);
     }
 
-    public LabOrderAttachmentEntity getAttachmentEntity(UUID attachmentId) {
+    public AttachmentDownloadInfo getAttachmentDownload(UUID attachmentId) {
+        log.info("Downloading attachment: {}", attachmentId);
+        LabOrderAttachmentEntity attachment = getAttachmentEntity(attachmentId);
+        byte[] data = fileStorageService.retrieve(attachment);
+        return AttachmentDownloadInfo.builder()
+                .fileName(attachment.getFileName())
+                .contentType(attachment.getContentType())
+                .data(data)
+                .build();
+    }
+
+    private LabOrderAttachmentEntity getAttachmentEntity(UUID attachmentId) {
         LabOrderAttachmentEntity attachment = labOrderAttachmentRepository.findByIdOptional(attachmentId)
                 .orElseThrow(() -> new NotFoundException("Attachment not found with id: " + attachmentId));
 
         validateDoctorAccess(attachment.getLabOrder());
         return attachment;
-    }
-
-    public byte[] downloadAttachment(UUID attachmentId) {
-        log.info("Downloading attachment: {}", attachmentId);
-        LabOrderAttachmentEntity attachment = getAttachmentEntity(attachmentId);
-        return fileStorageService.retrieve(attachment);
     }
 
     @Transactional

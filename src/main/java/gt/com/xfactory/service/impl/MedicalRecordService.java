@@ -99,40 +99,36 @@ public class MedicalRecordService {
     }
 
     @Transactional
-    public MedicalRecordDto createMedicalRecord(UUID patientId, UUID appointmentId, UUID doctorId, UUID specialtyId,
-                                                 MedicalRecordType recordType, String chiefComplaint, String presentIllness,
-                                                 String physicalExam, String treatmentPlan,
-                                                 Map<String, Object> vitalSigns, Map<String, Object> specialtyData,
-                                                 Object attachments) {
-        log.info("Creating medical record for patient: {}", patientId);
+    public MedicalRecordDto createMedicalRecord(MedicalRecordRequest request) {
+        log.info("Creating medical record for patient: {}", request.getPatientId());
 
-        var patient = patientRepository.findByIdOptional(patientId)
-                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+        var patient = patientRepository.findByIdOptional(request.getPatientId())
+                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
 
-        var doctor = doctorRepository.findByIdOptional(doctorId)
-                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+        var doctor = doctorRepository.findByIdOptional(request.getDoctorId())
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + request.getDoctorId()));
 
         MedicalRecordEntity record = new MedicalRecordEntity();
         record.setPatient(patient);
         record.setDoctor(doctor);
-        record.setRecordType(recordType != null ? recordType : MedicalRecordType.consultation);
-        record.setChiefComplaint(chiefComplaint);
-        record.setPresentIllness(presentIllness);
-        record.setPhysicalExam(physicalExam);
-        record.setTreatmentPlan(treatmentPlan);
-        record.setVitalSigns(vitalSigns);
-        record.setSpecialtyData(specialtyData);
-        record.setAttachments(attachments);
+        record.setRecordType(request.getRecordType() != null ? request.getRecordType() : MedicalRecordType.consultation);
+        record.setChiefComplaint(request.getChiefComplaint());
+        record.setPresentIllness(request.getPresentIllness());
+        record.setPhysicalExam(request.getPhysicalExam());
+        record.setTreatmentPlan(request.getTreatmentPlan());
+        record.setVitalSigns(request.getVitalSigns());
+        record.setSpecialtyData(request.getSpecialtyData());
+        record.setAttachments(request.getAttachments());
 
-        if (appointmentId != null) {
-            var appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)
-                    .orElseThrow(() -> new NotFoundException("Appointment not found with id: " + appointmentId));
+        if (request.getAppointmentId() != null) {
+            var appointment = medicalAppointmentRepository.findByIdOptional(request.getAppointmentId())
+                    .orElseThrow(() -> new NotFoundException("Appointment not found with id: " + request.getAppointmentId()));
             record.setAppointment(appointment);
         }
 
-        if (specialtyId != null) {
-            var specialty = specialtyRepository.findByIdOptional(specialtyId)
-                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + specialtyId));
+        if (request.getSpecialtyId() != null) {
+            var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
+                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
             record.setSpecialty(specialty);
         }
 
@@ -143,22 +139,19 @@ public class MedicalRecordService {
     }
 
     @Transactional
-    public MedicalRecordDto updateMedicalRecord(UUID recordId, String chiefComplaint, String presentIllness,
-                                                 String physicalExam, String treatmentPlan,
-                                                 Map<String, Object> vitalSigns, Map<String, Object> specialtyData,
-                                                 Object attachments) {
+    public MedicalRecordDto updateMedicalRecord(UUID recordId, MedicalRecordRequest request) {
         log.info("Updating medical record: {}", recordId);
 
         var record = medicalRecordRepository.findByIdOptional(recordId)
                 .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + recordId));
 
-        if (chiefComplaint != null) record.setChiefComplaint(chiefComplaint);
-        if (presentIllness != null) record.setPresentIllness(presentIllness);
-        if (physicalExam != null) record.setPhysicalExam(physicalExam);
-        if (treatmentPlan != null) record.setTreatmentPlan(treatmentPlan);
-        if (vitalSigns != null) record.setVitalSigns(vitalSigns);
-        if (specialtyData != null) record.setSpecialtyData(specialtyData);
-        if (attachments != null) record.setAttachments(attachments);
+        if (request.getChiefComplaint() != null) record.setChiefComplaint(request.getChiefComplaint());
+        if (request.getPresentIllness() != null) record.setPresentIllness(request.getPresentIllness());
+        if (request.getPhysicalExam() != null) record.setPhysicalExam(request.getPhysicalExam());
+        if (request.getTreatmentPlan() != null) record.setTreatmentPlan(request.getTreatmentPlan());
+        if (request.getVitalSigns() != null) record.setVitalSigns(request.getVitalSigns());
+        if (request.getSpecialtyData() != null) record.setSpecialtyData(request.getSpecialtyData());
+        if (request.getAttachments() != null) record.setAttachments(request.getAttachments());
 
         medicalRecordRepository.persist(record);
         log.info("Medical record updated: {}", recordId);
@@ -243,35 +236,33 @@ public class MedicalRecordService {
     }
 
     @Transactional
-    public PrescriptionDto createPrescription(UUID patientId, UUID medicalRecordId, UUID doctorId,
-                                               List<PrescriptionMedicationRequest> medications, String notes,
-                                               LocalDate issueDate, LocalDate expiryDate) {
-        log.info("Creating prescription for patient: {}", patientId);
+    public PrescriptionDto createPrescription(PrescriptionRequest request) {
+        log.info("Creating prescription for patient: {}", request.getPatientId());
 
-        var patient = patientRepository.findByIdOptional(patientId)
-                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+        var patient = patientRepository.findByIdOptional(request.getPatientId())
+                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
 
-        var doctor = doctorRepository.findByIdOptional(doctorId)
-                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+        var doctor = doctorRepository.findByIdOptional(request.getDoctorId())
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + request.getDoctorId()));
 
         PrescriptionEntity prescription = new PrescriptionEntity();
         prescription.setPatient(patient);
         prescription.setDoctor(doctor);
-        prescription.setNotes(notes);
-        prescription.setIssueDate(issueDate != null ? issueDate : LocalDate.now());
-        prescription.setExpiryDate(expiryDate);
+        prescription.setNotes(request.getNotes());
+        prescription.setIssueDate(request.getIssueDate() != null ? request.getIssueDate() : LocalDate.now());
+        prescription.setExpiryDate(request.getExpiryDate());
 
-        if (medicalRecordId != null) {
-            var medicalRecord = medicalRecordRepository.findByIdOptional(medicalRecordId)
-                    .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + medicalRecordId));
+        if (request.getMedicalRecordId() != null) {
+            var medicalRecord = medicalRecordRepository.findByIdOptional(request.getMedicalRecordId())
+                    .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + request.getMedicalRecordId()));
             prescription.setMedicalRecord(medicalRecord);
         }
 
         prescriptionRepository.persist(prescription);
 
         // Add prescription medications
-        if (medications != null && !medications.isEmpty()) {
-            for (PrescriptionMedicationRequest medRequest : medications) {
+        if (request.getMedications() != null && !request.getMedications().isEmpty()) {
+            for (PrescriptionMedicationRequest medRequest : request.getMedications()) {
                 MedicationEntity medication = medicationRepository.findByIdOptional(medRequest.getMedicationId())
                         .orElseThrow(() -> new NotFoundException("Medication not found with id: " + medRequest.getMedicationId()));
 

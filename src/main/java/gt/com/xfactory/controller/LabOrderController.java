@@ -3,7 +3,6 @@ package gt.com.xfactory.controller;
 import gt.com.xfactory.dto.request.*;
 import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
-import gt.com.xfactory.entity.*;
 import gt.com.xfactory.service.impl.*;
 import jakarta.annotation.security.*;
 import jakarta.enterprise.context.*;
@@ -122,10 +121,9 @@ public class LabOrderController {
     @Path("/attachments/{attachmentId}/download")
     @RolesAllowed({"admin", "doctor"})
     public Response downloadAttachment(@PathParam("attachmentId") UUID attachmentId) {
-        LabOrderAttachmentEntity attachment = labOrderService.getAttachmentEntity(attachmentId);
-        byte[] data = labOrderService.downloadAttachment(attachmentId);
-        String sanitizedFileName = attachment.getFileName().replaceAll("[^a-zA-Z0-9._-]", "_");
-        return Response.ok(data, attachment.getContentType())
+        AttachmentDownloadInfo info = labOrderService.getAttachmentDownload(attachmentId);
+        String sanitizedFileName = info.getFileName().replaceAll("[^a-zA-Z0-9._-]", "_");
+        return Response.ok(info.getData(), info.getContentType())
                 .header("Content-Disposition", "attachment; filename=\"" + sanitizedFileName + "\"")
                 .build();
     }

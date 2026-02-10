@@ -46,20 +46,7 @@ public class MedicalRecordController {
     @Consumes(MediaType.APPLICATION_JSON)
     @RolesAllowed({"admin", "doctor"})
     public Response createMedicalRecord(@Valid MedicalRecordRequest request) {
-        MedicalRecordDto created = medicalRecordService.createMedicalRecord(
-                request.getPatientId(),
-                request.getAppointmentId(),
-                request.getDoctorId(),
-                request.getSpecialtyId(),
-                request.getRecordType(),
-                request.getChiefComplaint(),
-                request.getPresentIllness(),
-                request.getPhysicalExam(),
-                request.getTreatmentPlan(),
-                request.getVitalSigns(),
-                request.getSpecialtyData(),
-                request.getAttachments()
-        );
+        MedicalRecordDto created = medicalRecordService.createMedicalRecord(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
@@ -70,16 +57,7 @@ public class MedicalRecordController {
     public MedicalRecordDto updateMedicalRecord(
             @PathParam("id") UUID recordId,
             @Valid MedicalRecordRequest request) {
-        return medicalRecordService.updateMedicalRecord(
-                recordId,
-                request.getChiefComplaint(),
-                request.getPresentIllness(),
-                request.getPhysicalExam(),
-                request.getTreatmentPlan(),
-                request.getVitalSigns(),
-                request.getSpecialtyData(),
-                request.getAttachments()
-        );
+        return medicalRecordService.updateMedicalRecord(recordId, request);
     }
 
     @DELETE
@@ -135,15 +113,7 @@ public class MedicalRecordController {
     @Consumes(MediaType.APPLICATION_JSON)
     @RolesAllowed({"admin", "doctor"})
     public Response createPrescription(@Valid PrescriptionRequest request) {
-        PrescriptionDto created = medicalRecordService.createPrescription(
-                request.getPatientId(),
-                request.getMedicalRecordId(),
-                request.getDoctorId(),
-                request.getMedications(),
-                request.getNotes(),
-                request.getIssueDate(),
-                request.getExpiryDate()
-        );
+        PrescriptionDto created = medicalRecordService.createPrescription(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
