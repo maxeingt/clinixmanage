@@ -1,6 +1,5 @@
 package gt.com.xfactory.repository;
 
-import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import io.quarkus.hibernate.orm.panache.*;
 import jakarta.enterprise.context.*;
@@ -11,15 +10,8 @@ import java.util.stream.*;
 @ApplicationScoped
 public class DoctorSpecialtyRepository implements PanacheRepository<DoctorSpecialtyEntity> {
 
-    public List<SpecialtyDto> findSpecialtiesByDoctorId(UUID doctorId) {
-        return find("id.doctorId", doctorId)
-                .stream()
-                .map(ds -> SpecialtyDto.builder()
-                        .id(ds.getSpecialty().getId())
-                        .name(ds.getSpecialty().getName())
-                        .description(ds.getSpecialty().getDescription())
-                        .build())
-                .collect(Collectors.toList());
+    public List<DoctorSpecialtyEntity> findByDoctorId(UUID doctorId) {
+        return find("id.doctorId", doctorId).list();
     }
 
     public List<DoctorEntity> findDoctorsBySpecialtyId(UUID specialtyId) {
@@ -29,22 +21,15 @@ public class DoctorSpecialtyRepository implements PanacheRepository<DoctorSpecia
                 .collect(Collectors.toList());
     }
 
-    public java.util.Optional<DoctorSpecialtyEntity> findByDoctorIdAndSpecialtyId(UUID doctorId, UUID specialtyId) {
+    public Optional<DoctorSpecialtyEntity> findByDoctorIdAndSpecialtyId(UUID doctorId, UUID specialtyId) {
         return find("id.doctorId = ?1 and id.specialtyId = ?2", doctorId, specialtyId).firstResultOptional();
     }
 
-    public Map<UUID, List<SpecialtyDto>> findSpecialtiesByDoctorIds(List<UUID> doctorIds) {
+    public Map<UUID, List<DoctorSpecialtyEntity>> findByDoctorIds(List<UUID> doctorIds) {
         if (doctorIds == null || doctorIds.isEmpty()) return Collections.emptyMap();
         return find("id.doctorId in ?1", doctorIds)
                 .stream()
-                .collect(Collectors.groupingBy(
-                        ds -> ds.getId().getDoctorId(),
-                        Collectors.mapping(ds -> SpecialtyDto.builder()
-                                .id(ds.getSpecialty().getId())
-                                .name(ds.getSpecialty().getName())
-                                .description(ds.getSpecialty().getDescription())
-                                .build(), Collectors.toList())
-                ));
+                .collect(Collectors.groupingBy(ds -> ds.getId().getDoctorId()));
     }
 
     public long deleteByDoctorId(UUID doctorId) {

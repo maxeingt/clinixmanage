@@ -58,7 +58,7 @@ public class DoctorService {
         if (!response.content.isEmpty()) {
             List<UUID> doctorIds = response.content.stream().map(DoctorDto::getId).toList();
 
-            Map<UUID, List<SpecialtyDto>> specialtiesMap = doctorSpecialtyRepository.findSpecialtiesByDoctorIds(doctorIds);
+            Map<UUID, List<SpecialtyDto>> specialtiesMap = toSpecialtyDtoMap(doctorSpecialtyRepository.findByDoctorIds(doctorIds));
             Map<UUID, List<DoctorClinicEntity>> clinicsMap = doctorClinicRepository.findByDoctorIds(doctorIds);
 
             for (DoctorDto doctor : response.content) {
@@ -76,7 +76,7 @@ public class DoctorService {
                 .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + id));
 
         DoctorDto dto = toDto.apply(doctor);
-        dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(id));
+        dto.setSpecialties(toSpecialtyDtos(doctorSpecialtyRepository.findByDoctorId(id)));
         dto.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(id)));
         return dto;
     }
@@ -137,7 +137,7 @@ public class DoctorService {
         doctorRepository.persist(doctor);
 
         DoctorDto dto = toDto.apply(doctor);
-        dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(id));
+        dto.setSpecialties(toSpecialtyDtos(doctorSpecialtyRepository.findByDoctorId(id)));
         dto.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(id)));
         return dto;
     }
@@ -176,7 +176,7 @@ public class DoctorService {
         doctorRepository.findByIdOptional(doctorId)
                 .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
 
-        return doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctorId);
+        return toSpecialtyDtos(doctorSpecialtyRepository.findByDoctorId(doctorId));
     }
 
     @Transactional
@@ -308,7 +308,7 @@ public class DoctorService {
                 .orElseThrow(() -> new NotFoundException("Doctor not found for userId: " + userId));
 
         DoctorDto dto = toDto.apply(doctor);
-        dto.setSpecialties(doctorSpecialtyRepository.findSpecialtiesByDoctorId(doctor.getId()));
+        dto.setSpecialties(toSpecialtyDtos(doctorSpecialtyRepository.findByDoctorId(doctor.getId())));
         dto.setClinics(getActiveClinics(doctorClinicRepository.findByDoctorId(doctor.getId())));
         return dto;
     }
@@ -327,6 +327,24 @@ public class DoctorService {
                 .filter(dc -> dc.getActive() != null && dc.getActive())
                 .map(DoctorService::toClinicDto)
                 .toList();
+    }
+
+    public static SpecialtyDto toSpecialtyDto(DoctorSpecialtyEntity ds) {
+        return SpecialtyDto.builder()
+                .id(ds.getSpecialty().getId())
+                .name(ds.getSpecialty().getName())
+                .description(ds.getSpecialty().getDescription())
+                .build();
+    }
+
+    public static List<SpecialtyDto> toSpecialtyDtos(List<DoctorSpecialtyEntity> entities) {
+        return entities.stream().map(DoctorService::toSpecialtyDto).toList();
+    }
+
+    public static Map<UUID, List<SpecialtyDto>> toSpecialtyDtoMap(Map<UUID, List<DoctorSpecialtyEntity>> entityMap) {
+        Map<UUID, List<SpecialtyDto>> result = new HashMap<>();
+        entityMap.forEach((id, entities) -> result.put(id, toSpecialtyDtos(entities)));
+        return result;
     }
 
     public static final Function<DoctorEntity, DoctorDto> toDto = entity ->

@@ -49,7 +49,7 @@ public class SpecialtyService {
 
         // Batch load specialties (1 query instead of N)
         List<UUID> doctorIds = doctors.stream().map(DoctorEntity::getId).toList();
-        Map<UUID, List<SpecialtyDto>> specialtiesMap = doctorSpecialtyRepository.findSpecialtiesByDoctorIds(doctorIds);
+        Map<UUID, List<SpecialtyDto>> specialtiesMap = DoctorService.toSpecialtyDtoMap(doctorSpecialtyRepository.findByDoctorIds(doctorIds));
 
         return doctors.stream()
                 .map(entity -> {
