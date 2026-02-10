@@ -1,0 +1,3 @@
+ALTER TABLE doctor
+    ALTER COLUMN created_at TYPE TIMESTAMP USING created_at::TIMESTAMP,
+    ALTER COLUMN updated_at TYPE TIMESTAMP USING updated_at::TIMESTAMP;
