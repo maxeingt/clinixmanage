@@ -42,6 +42,9 @@ public class MedicalAppointmentService {
     DiagnosisCatalogRepository diagnosisCatalogRepository;
 
     @Inject
+    DoctorSpecialtyRepository doctorSpecialtyRepository;
+
+    @Inject
     SecurityContextService securityContextService;
 
     private UUID getCurrentDoctorId() {
@@ -257,6 +260,18 @@ public class MedicalAppointmentService {
         }
     }
 
+    private UUID resolveSpecialtyId(MedicalAppointmentEntity entity) {
+        if (entity.getSpecialty() != null) return entity.getSpecialty().getId();
+        return doctorSpecialtyRepository.findByDoctorId(entity.getDoctor().getId())
+                .stream().findFirst().map(ds -> ds.getSpecialty().getId()).orElse(null);
+    }
+
+    private String resolveSpecialtyName(MedicalAppointmentEntity entity) {
+        if (entity.getSpecialty() != null) return entity.getSpecialty().getName();
+        return doctorSpecialtyRepository.findByDoctorId(entity.getDoctor().getId())
+                .stream().findFirst().map(ds -> ds.getSpecialty().getName()).orElse(null);
+    }
+
     public MedicalAppointmentDto toMedicalAppointmentDto(MedicalAppointmentEntity entity) {
         return MedicalAppointmentDto.builder()
                 .id(entity.getId())
@@ -266,8 +281,8 @@ public class MedicalAppointmentService {
                 .doctorName(entity.getDoctor().getFirstName() + " " + entity.getDoctor().getLastName())
                 .clinicId(entity.getClinic().getId())
                 .clinicName(entity.getClinic().getName())
-                .specialtyId(entity.getSpecialty() != null ? entity.getSpecialty().getId() : null)
-                .specialtyName(entity.getSpecialty() != null ? entity.getSpecialty().getName() : null)
+                .specialtyId(resolveSpecialtyId(entity))
+                .specialtyName(resolveSpecialtyName(entity))
                 .status(entity.getStatus() != null ? entity.getStatus().name() : null)
                 .appointmentDate(entity.getAppointmentDate())
                 .reason(entity.getReason())
