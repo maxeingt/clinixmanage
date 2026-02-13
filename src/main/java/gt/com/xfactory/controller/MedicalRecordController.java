@@ -71,26 +71,6 @@ public class MedicalRecordController {
         return Response.noContent().build();
     }
 
-    // Specialty Form Template endpoints
-
-    @GET
-    @Path("/form-templates")
-    public List<SpecialtyFormTemplateDto> getAllActiveFormTemplates() {
-        return medicalRecordService.getAllActiveFormTemplates();
-    }
-
-    @GET
-    @Path("/form-templates/specialty/{specialtyId}")
-    public List<SpecialtyFormTemplateDto> getFormTemplatesBySpecialtyId(@PathParam("specialtyId") UUID specialtyId) {
-        return medicalRecordService.getFormTemplatesBySpecialtyId(specialtyId);
-    }
-
-    @GET
-    @Path("/form-templates/{id}")
-    public SpecialtyFormTemplateDto getFormTemplateById(@PathParam("id") UUID templateId) {
-        return medicalRecordService.getFormTemplateById(templateId);
-    }
-
     // Prescription endpoints
 
     @GET

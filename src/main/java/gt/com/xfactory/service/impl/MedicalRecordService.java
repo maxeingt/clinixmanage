@@ -111,6 +111,13 @@ public class MedicalRecordService {
         record.setSpecialtyData(request.getSpecialtyData());
         record.setAttachments(request.getAttachments());
 
+        if (request.getFormTemplateId() != null) {
+            var template = specialtyFormTemplateRepository.findByIdOptional(request.getFormTemplateId())
+                    .orElseThrow(() -> new NotFoundException("Form template no encontrado con id: " + request.getFormTemplateId()));
+            record.setFormTemplateId(template.getId());
+            record.setFormTemplateVersion(template.getVersion());
+        }
+
         if (request.getAppointmentId() != null) {
             var appointment = medicalAppointmentRepository.findByIdOptional(request.getAppointmentId())
                     .orElseThrow(() -> new NotFoundException("Appointment not found with id: " + request.getAppointmentId()));
@@ -161,34 +168,6 @@ public class MedicalRecordService {
         log.info("Medical record deleted: {}", recordId);
     }
 
-    // Specialty Form Template methods
-
-    public List<SpecialtyFormTemplateDto> getFormTemplatesBySpecialtyId(UUID specialtyId) {
-        log.info("Fetching form templates for specialty: {}", specialtyId);
-
-        return specialtyFormTemplateRepository.findActiveBySpecialtyId(specialtyId)
-                .stream()
-                .map(toSpecialtyFormTemplateDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<SpecialtyFormTemplateDto> getAllActiveFormTemplates() {
-        log.info("Fetching all active form templates");
-
-        return specialtyFormTemplateRepository.findAllActive()
-                .stream()
-                .map(toSpecialtyFormTemplateDto)
-                .collect(Collectors.toList());
-    }
-
-    public SpecialtyFormTemplateDto getFormTemplateById(UUID templateId) {
-        log.info("Fetching form template by id: {}", templateId);
-
-        return specialtyFormTemplateRepository.findByIdOptional(templateId)
-                .map(toSpecialtyFormTemplateDto)
-                .orElseThrow(() -> new NotFoundException("Form template not found with id: " + templateId));
-    }
-
     // Mappers
 
     public static final Function<MedicalRecordEntity, MedicalRecordDto> toMedicalRecordDto = entity ->
@@ -208,21 +187,11 @@ public class MedicalRecordService {
                     .treatmentPlan(entity.getTreatmentPlan())
                     .vitalSigns(entity.getVitalSigns())
                     .specialtyData(entity.getSpecialtyData())
+                    .formTemplateId(entity.getFormTemplateId())
+                    .formTemplateVersion(entity.getFormTemplateVersion())
                     .attachments(entity.getAttachments())
                     .createdAt(entity.getCreatedAt())
                     .updatedAt(entity.getUpdatedAt())
-                    .build();
-
-    public static final Function<SpecialtyFormTemplateEntity, SpecialtyFormTemplateDto> toSpecialtyFormTemplateDto = entity ->
-            SpecialtyFormTemplateDto.builder()
-                    .id(entity.getId())
-                    .specialtyId(entity.getSpecialty().getId())
-                    .specialtyName(entity.getSpecialty().getName())
-                    .formName(entity.getFormName())
-                    .description(entity.getDescription())
-                    .formSchema(entity.getFormSchema())
-                    .isActive(entity.getIsActive())
-                    .version(entity.getVersion())
                     .build();
 
 }

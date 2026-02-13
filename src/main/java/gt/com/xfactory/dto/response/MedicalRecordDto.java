@@ -30,6 +30,8 @@ public class MedicalRecordDto implements Serializable {
     private String treatmentPlan;
     private Map<String, Object> vitalSigns;
     private Map<String, Object> specialtyData;
+    private UUID formTemplateId;
+    private Integer formTemplateVersion;
     private Object attachments;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -40,5 +40,7 @@ public class MedicalRecordRequest {
 
     private Map<String, Object> specialtyData;
 
+    private UUID formTemplateId;
+
     private Object attachments;
 }

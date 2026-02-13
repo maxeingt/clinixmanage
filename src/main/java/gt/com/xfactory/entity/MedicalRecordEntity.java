@@ -73,6 +73,12 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     @Column(name = "attachments", columnDefinition = "jsonb")
     private Object attachments;
 
+    @Column(name = "form_template_id")
+    private UUID formTemplateId;
+
+    @Column(name = "form_template_version")
+    private Integer formTemplateVersion;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
