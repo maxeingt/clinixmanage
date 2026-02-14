@@ -27,10 +27,10 @@ public class DiagnosisCatalogEntity extends PanacheEntityBase implements Seriali
     @Column(name = "name", nullable = false, length = 500)
     private String name;
 
-    @Column(name = "category")
+    @Column(name = "category", length = 250)
     private String category;
 
-    @Column(name = "chapter")
+    @Column(name = "chapter", length = 250)
     private String chapter;
 
     @Column(name = "created_at")

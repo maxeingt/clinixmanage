@@ -28,7 +28,7 @@ public class LabOrderAttachmentEntity extends PanacheEntityBase implements Seria
     @JoinColumn(name = "lab_order_id", nullable = false)
     private LabOrderEntity labOrder;
 
-    @Column(name = "file_name", nullable = false)
+    @Column(name = "file_name", nullable = false, length = 255)
     private String fileName;
 
     @Column(name = "content_type", nullable = false, length = 100)
@@ -42,7 +42,7 @@ public class LabOrderAttachmentEntity extends PanacheEntityBase implements Seria
     @Column(name = "file_data", nullable = false)
     private byte[] fileData;
 
-    @Column(name = "uploaded_by")
+    @Column(name = "uploaded_by", length = 100)
     private String uploadedBy;
 
     @Column(name = "created_at")

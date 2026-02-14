@@ -29,13 +29,13 @@ public class LabResultEntity extends PanacheEntityBase implements Serializable {
     @JoinColumn(name = "lab_order_id", nullable = false)
     private LabOrderEntity labOrder;
 
-    @Column(name = "test_name", nullable = false)
+    @Column(name = "test_name", nullable = false, length = 200)
     private String testName;
 
     @Column(name = "test_code", length = 50)
     private String testCode;
 
-    @Column(name = "value")
+    @Column(name = "value", length = 255)
     private String value;
 
     @Column(name = "unit", length = 50)

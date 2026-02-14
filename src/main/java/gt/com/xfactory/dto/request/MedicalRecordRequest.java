@@ -1,14 +1,10 @@
 package gt.com.xfactory.dto.request;
 
-import gt.com.xfactory.entity.enums.MedicalRecordType;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import gt.com.xfactory.entity.enums.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -28,12 +24,16 @@ public class MedicalRecordRequest {
 
     private MedicalRecordType recordType;
 
+    @Size(max = 10000, message = "Chief complaint must not exceed 10000 characters")
     private String chiefComplaint;
 
+    @Size(max = 10000, message = "Present illness must not exceed 10000 characters")
     private String presentIllness;
 
+    @Size(max = 10000, message = "Physical exam must not exceed 10000 characters")
     private String physicalExam;
 
+    @Size(max = 10000, message = "Treatment plan must not exceed 10000 characters")
     private String treatmentPlan;
 
     private Map<String, Object> vitalSigns;

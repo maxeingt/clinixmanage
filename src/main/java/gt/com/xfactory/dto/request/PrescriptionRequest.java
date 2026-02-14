@@ -1,15 +1,11 @@
 package gt.com.xfactory.dto.request;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.*;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
+import java.time.*;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -29,6 +25,7 @@ public class PrescriptionRequest {
     @Valid
     private List<PrescriptionMedicationRequest> medications;
 
+    @Size(max = 5000, message = "Notes must not exceed 5000 characters")
     private String notes;
 
     private LocalDate issueDate;

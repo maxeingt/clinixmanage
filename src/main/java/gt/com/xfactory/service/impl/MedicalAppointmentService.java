@@ -148,8 +148,6 @@ public class MedicalAppointmentService {
             var followUp = medicalAppointmentRepository.findByIdOptional(request.getFollowUpAppointmentId())
                     .orElseThrow(() -> new NotFoundException("Follow-up appointment not found with id: " + request.getFollowUpAppointmentId()));
             appointment.setFollowUpAppointment(followUp);
-        } else {
-            appointment.setFollowUpAppointment(null);
         }
 
         if (request.getStatus() != null) {
@@ -160,8 +158,6 @@ public class MedicalAppointmentService {
             var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
                     .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
             appointment.setSpecialty(specialty);
-        } else {
-            appointment.setSpecialty(null);
         }
 
         medicalAppointmentRepository.persist(appointment);

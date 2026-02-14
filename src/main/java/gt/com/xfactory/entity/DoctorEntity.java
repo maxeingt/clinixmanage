@@ -24,20 +24,23 @@ public class DoctorEntity extends PanacheEntityBase implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private UUID id;
     private LocalDate birthdate;
-    @Column(name = "first_name")
+    @Column(name = "first_name", length = 150)
     private String firstName;
-    @Column(name = "last_name")
+    @Column(name = "last_name", length = 150)
     private String lastName;
+    @Column(length = 250)
     private String address;
+    @Column(length = 150)
     private String email;
+    @Column(length = 20)
     private String phone;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-    @Column(name = "created_by")
+    @Column(name = "created_by", length = 255)
     private String createdBy;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    @Column(name = "updated_by")
+    @Column(name = "updated_by", length = 255)
     private String updatedBy;
 
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
