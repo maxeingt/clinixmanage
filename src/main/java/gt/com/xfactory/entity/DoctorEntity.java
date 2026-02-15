@@ -50,7 +50,7 @@ public class DoctorEntity extends PanacheEntityBase implements Serializable {
     private UserEntity user;
 
     @TenantId
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
+    @Column(name = "organization_id", nullable = false, columnDefinition = "uuid")
+    private String organizationId;
 
 }

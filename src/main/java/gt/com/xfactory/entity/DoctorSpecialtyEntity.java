@@ -29,6 +29,6 @@ public class DoctorSpecialtyEntity extends PanacheEntityBase {
     private SpecialtyEntity specialty;
 
     @TenantId
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
+    @Column(name = "organization_id", nullable = false, columnDefinition = "uuid")
+    private String organizationId;
 }

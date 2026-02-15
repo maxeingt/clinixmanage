@@ -48,8 +48,8 @@ public class UserEntity extends PanacheEntityBase implements Serializable {
     private LocalDateTime updatedAt;
 
     @TenantId
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
+    @Column(name = "organization_id", nullable = false, columnDefinition = "uuid")
+    private String organizationId;
 
     @PrePersist
     public void prePersist() {

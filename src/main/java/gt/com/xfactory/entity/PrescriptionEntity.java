@@ -53,8 +53,8 @@ public class PrescriptionEntity extends PanacheEntityBase implements Serializabl
     private LocalDateTime createdAt;
 
     @TenantId
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
+    @Column(name = "organization_id", nullable = false, columnDefinition = "uuid")
+    private String organizationId;
 
     @PrePersist
     protected void onCreate() {

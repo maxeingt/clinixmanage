@@ -39,6 +39,6 @@ public class DoctorClinicEntity extends PanacheEntityBase {
     private Boolean active = true;
 
     @TenantId
-    @Column(name = "organization_id", nullable = false)
-    private UUID organizationId;
+    @Column(name = "organization_id", nullable = false, columnDefinition = "uuid")
+    private String organizationId;
 }
