@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.type.SqlTypes;
 
 import java.io.Serializable;
@@ -90,6 +91,10 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
 
     @Column(name = "updated_by")
     private UUID updatedBy;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

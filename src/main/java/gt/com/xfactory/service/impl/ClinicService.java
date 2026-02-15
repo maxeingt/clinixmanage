@@ -5,6 +5,7 @@ import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.transaction.*;
@@ -14,6 +15,8 @@ import lombok.extern.slf4j.*;
 
 import java.util.*;
 import java.util.stream.*;
+
+import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
 @ApplicationScoped
 @Slf4j
@@ -40,6 +43,17 @@ public class ClinicService {
                 .stream()
                 .map(this::toClinicDto)
                 .collect(Collectors.toList());
+    }
+
+    public PageResponse<ClinicDto> getClinicsPaginated(ClinicFilterDto filter, @Valid CommonPageRequest pageRequest) {
+        log.info("Fetching clinics with filter - pageRequest: {}, filter: {}", pageRequest, filter);
+
+        var fb = FilterBuilder.create()
+                .addLike(filter.name, "name")
+                .addLike(filter.address, "address")
+                .addLike(filter.phone, "phone");
+
+        return toPageResponse(clinicRepository, fb.buildQuery(), pageRequest, fb.getParams(), this::toClinicDto);
     }
 
     public ClinicDto getClinicById(UUID id) {

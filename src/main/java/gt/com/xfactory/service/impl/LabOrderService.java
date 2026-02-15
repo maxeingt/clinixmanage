@@ -78,7 +78,13 @@ public class LabOrderService {
                 .addEquals(filter.doctorId, "doctor.id", "doctorId")
                 .addEquals(filter.status, "status")
                 .addDateRange(filter.startDate, "orderDate", "startDate",
-                              filter.endDate, "orderDate", "endDate");
+                              filter.endDate, "orderDate", "endDate")
+                .addCondition(filter.patientName != null && !filter.patientName.isBlank(),
+                        "(LOWER(patient.firstName) LIKE LOWER(CONCAT('%', :patientName, '%')) OR LOWER(patient.lastName) LIKE LOWER(CONCAT('%', :patientName, '%')))",
+                        "patientName", filter.patientName)
+                .addCondition(filter.clinicId != null,
+                        "appointment.clinic.id = :clinicId",
+                        "clinicId", filter.clinicId);
 
         return toPageResponse(labOrderRepository, fb.buildQuery(), pageRequest, fb.getParams(), this::mapToDto);
     }

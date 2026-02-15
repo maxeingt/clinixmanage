@@ -33,6 +33,26 @@ public class MedicalAppointmentRepository implements PanacheRepository<MedicalAp
                 query.append(" AND clinic.id = :clinicId");
                 params.put("clinicId", filter.clinicId);
             }
+            if (filter.specialtyId != null) {
+                query.append(" AND specialty.id = :specialtyId");
+                params.put("specialtyId", filter.specialtyId);
+            }
+            if (filter.source != null) {
+                query.append(" AND source = :source");
+                params.put("source", filter.source);
+            }
+            if (filter.startDate != null) {
+                query.append(" AND appointmentDate >= :startDate");
+                params.put("startDate", filter.startDate);
+            }
+            if (filter.endDate != null) {
+                query.append(" AND appointmentDate <= :endDate");
+                params.put("endDate", filter.endDate);
+            }
+            if (filter.status != null) {
+                query.append(" AND status = :status");
+                params.put("status", filter.status);
+            }
         }
 
         return find(query.toString(), params).list();
@@ -51,6 +71,18 @@ public class MedicalAppointmentRepository implements PanacheRepository<MedicalAp
             if (filter.doctorId != null) {
                 query.append(" AND doctor.id = :doctorId");
                 params.put("doctorId", filter.doctorId);
+            }
+            if (filter.patientId != null) {
+                query.append(" AND patient.id = :patientId");
+                params.put("patientId", filter.patientId);
+            }
+            if (filter.specialtyId != null) {
+                query.append(" AND specialty.id = :specialtyId");
+                params.put("specialtyId", filter.specialtyId);
+            }
+            if (filter.source != null) {
+                query.append(" AND source = :source");
+                params.put("source", filter.source);
             }
             if (filter.startDate != null) {
                 query.append(" AND appointmentDate >= :startDate");

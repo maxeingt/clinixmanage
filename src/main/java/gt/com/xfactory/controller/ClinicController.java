@@ -1,24 +1,18 @@
 package gt.com.xfactory.controller;
 
-import gt.com.xfactory.dto.request.ClinicRequest;
-import gt.com.xfactory.dto.request.filter.DoctorFilterDto;
-import gt.com.xfactory.dto.request.filter.MedicalAppointmentFilterDto;
-import gt.com.xfactory.dto.response.ClinicDto;
-import gt.com.xfactory.dto.response.DoctorDto;
-import gt.com.xfactory.dto.response.MedicalAppointmentDto;
-import gt.com.xfactory.dto.response.PageResponse;
-import gt.com.xfactory.dto.request.CommonPageRequest;
-import gt.com.xfactory.service.impl.ClinicService;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.service.impl.*;
+import jakarta.annotation.security.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.*;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
 
 @RequestScoped
 @Path("/api/v1/clinics")

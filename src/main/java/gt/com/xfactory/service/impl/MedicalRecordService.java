@@ -1,22 +1,28 @@
 package gt.com.xfactory.service.impl;
 
 import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
 import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.transaction.*;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
+import org.apache.commons.lang3.*;
 import org.eclipse.microprofile.jwt.*;
 
 import java.time.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
+
+import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
 @ApplicationScoped
 @Slf4j
@@ -45,6 +51,24 @@ public class MedicalRecordService {
 
     private UUID getCurrentDoctorId() {
         return securityContextService.getCurrentDoctorId();
+    }
+
+    public PageResponse<MedicalRecordDto> getMedicalRecordsPaginated(MedicalRecordFilterDto filter, @Valid CommonPageRequest pageRequest) {
+        log.info("Fetching medical records with filter - pageRequest: {}, filter: {}", pageRequest, filter);
+
+        UUID currentDoctorId = getCurrentDoctorId();
+        var fb = FilterBuilder.create()
+                .addEquals(currentDoctorId, "doctor.id", "currentDoctorId")
+                .addEquals(filter.patientId, "patient.id", "patientId")
+                .addEquals(filter.doctorId, "doctor.id", "doctorId")
+                .addEquals(filter.specialtyId, "specialty.id", "specialtyId")
+                .addCondition(StringUtils.isNotBlank(filter.recordType),
+                        "recordType = :recordType", "recordType",
+                        StringUtils.isNotBlank(filter.recordType) ? MedicalRecordType.valueOf(filter.recordType) : null)
+                .addDateRange(filter.startDate, "createdAt", "startDate",
+                              filter.endDate, "createdAt", "endDate");
+
+        return toPageResponse(medicalRecordRepository, fb.buildQuery(), pageRequest, fb.getParams(), toMedicalRecordDto);
     }
 
     public List<MedicalRecordDto> getMedicalRecordsByPatientId(UUID patientId) {

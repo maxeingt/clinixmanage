@@ -68,6 +68,22 @@ public class SecurityContextService {
         }
     }
 
+    public UUID getCurrentOrganizationId() {
+        Object orgClaim = jwt.getClaim("organization_id");
+        if (orgClaim == null) {
+            throw new ForbiddenException("Token no contiene organization_id");
+        }
+        return UUID.fromString(orgClaim.toString());
+    }
+
+    public String getCurrentOrganizationSlug() {
+        Object slugClaim = jwt.getClaim("organization_slug");
+        if (slugClaim == null) {
+            return null;
+        }
+        return slugClaim.toString();
+    }
+
     public void validateOwnDoctorAccess(UUID requestedDoctorId) {
         if (securityIdentity.hasRole("admin")) return;
         String keycloakId = jwt.getSubject();

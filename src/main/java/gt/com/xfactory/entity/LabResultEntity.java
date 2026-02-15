@@ -3,6 +3,7 @@ package gt.com.xfactory.entity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.envers.*;
 
 import java.io.*;
@@ -58,6 +59,10 @@ public class LabResultEntity extends PanacheEntityBase implements Serializable {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

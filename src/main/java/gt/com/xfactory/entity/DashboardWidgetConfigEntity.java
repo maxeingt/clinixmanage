@@ -5,6 +5,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.type.SqlTypes;
 
 import java.io.*;
@@ -31,6 +32,10 @@ public class DashboardWidgetConfigEntity extends PanacheEntityBase implements Se
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

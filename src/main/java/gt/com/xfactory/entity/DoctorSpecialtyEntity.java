@@ -2,10 +2,10 @@ package gt.com.xfactory.entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.TenantId;
+
+import java.util.*;
 
 @Entity
 @Table(name = "doctor_specialty")
@@ -27,4 +27,8 @@ public class DoctorSpecialtyEntity extends PanacheEntityBase {
     @MapsId("specialtyId")
     @JoinColumn(name = "specialty_id")
     private SpecialtyEntity specialty;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 }

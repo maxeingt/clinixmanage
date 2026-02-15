@@ -1,6 +1,5 @@
 package gt.com.xfactory.dto.request.filter;
 
-import gt.com.xfactory.entity.enums.*;
 import jakarta.ws.rs.*;
 import lombok.*;
 
@@ -8,7 +7,7 @@ import java.time.*;
 import java.util.*;
 
 @Data
-public class LabOrderFilterDto {
+public class MedicalRecordFilterDto {
 
     @QueryParam("patientId")
     public UUID patientId;
@@ -16,18 +15,15 @@ public class LabOrderFilterDto {
     @QueryParam("doctorId")
     public UUID doctorId;
 
-    @QueryParam("status")
-    public LabOrderStatus status;
+    @QueryParam("specialtyId")
+    public UUID specialtyId;
+
+    @QueryParam("recordType")
+    public String recordType;
 
     @QueryParam("startDate")
     public LocalDateTime startDate;
 
     @QueryParam("endDate")
     public LocalDateTime endDate;
-
-    @QueryParam("patientName")
-    public String patientName;
-
-    @QueryParam("clinicId")
-    public UUID clinicId;
 }

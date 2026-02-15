@@ -4,6 +4,8 @@ import jakarta.validation.constraints.*;
 import jakarta.ws.rs.*;
 import lombok.*;
 
+import java.util.*;
+
 @Data
 public class DoctorFilterDto {
     @QueryParam("firstName")
@@ -17,4 +19,14 @@ public class DoctorFilterDto {
     @QueryParam("mail")
     @Email(message = "Invalid email format.")
     public String mail;
+
+    @QueryParam("specialtyId")
+    public UUID specialtyId;
+
+    @QueryParam("clinicId")
+    public UUID clinicId;
+
+    @QueryParam("phone")
+    @Pattern(regexp = "^[0-9\\s+-]{1,20}$", message = "Phone contains invalid characters.")
+    public String phone;
 }

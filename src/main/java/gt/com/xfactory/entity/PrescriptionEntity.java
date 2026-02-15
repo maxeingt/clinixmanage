@@ -3,14 +3,12 @@ package gt.com.xfactory.entity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.envers.Audited;
 
-import java.io.Serializable;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Getter
 @Setter
@@ -53,6 +51,10 @@ public class PrescriptionEntity extends PanacheEntityBase implements Serializabl
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

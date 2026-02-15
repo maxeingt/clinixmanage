@@ -24,4 +24,13 @@ public class MedicalAppointmentFilterDto {
 
     @QueryParam("status")
     public AppointmentStatus status;
+
+    @QueryParam("patientId")
+    public UUID patientId;
+
+    @QueryParam("specialtyId")
+    public UUID specialtyId;
+
+    @QueryParam("source")
+    public AppointmentSource source;
 }

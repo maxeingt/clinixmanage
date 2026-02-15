@@ -50,7 +50,14 @@ public class DoctorService {
         var fb = FilterBuilder.create()
                 .addLike(filter.firstName, "firstName")
                 .addLike(filter.lastName, "lastName")
-                .addLike(filter.mail, "email", "mail");
+                .addLike(filter.mail, "email", "mail")
+                .addLike(filter.phone, "phone")
+                .addCondition(filter.specialtyId != null,
+                        "id IN (SELECT ds.doctor.id FROM DoctorSpecialtyEntity ds WHERE ds.specialty.id = :specialtyId)",
+                        "specialtyId", filter.specialtyId)
+                .addCondition(filter.clinicId != null,
+                        "id IN (SELECT dc.doctor.id FROM DoctorClinicEntity dc WHERE dc.clinic.id = :clinicId AND dc.active = true)",
+                        "clinicId", filter.clinicId);
 
         PageResponse<DoctorDto> response = toPageResponse(doctorRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
 

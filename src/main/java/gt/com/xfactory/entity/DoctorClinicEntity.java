@@ -3,9 +3,11 @@ package gt.com.xfactory.entity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.envers.Audited;
 
-import java.time.LocalDateTime;
+import java.time.*;
+import java.util.*;
 
 @Audited
 @Entity
@@ -35,4 +37,8 @@ public class DoctorClinicEntity extends PanacheEntityBase {
 
     @Column(name = "active", nullable = false)
     private Boolean active = true;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 }

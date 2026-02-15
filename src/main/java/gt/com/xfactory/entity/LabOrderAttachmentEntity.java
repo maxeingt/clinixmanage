@@ -3,6 +3,7 @@ package gt.com.xfactory.entity;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.envers.*;
 
 import java.io.*;
@@ -47,6 +48,10 @@ public class LabOrderAttachmentEntity extends PanacheEntityBase implements Seria
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

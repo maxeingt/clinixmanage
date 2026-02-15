@@ -1,19 +1,16 @@
 package gt.com.xfactory.controller;
 
-import gt.com.xfactory.dto.response.DoctorDto;
-import gt.com.xfactory.dto.response.SpecialtyDto;
-import gt.com.xfactory.service.impl.SpecialtyService;
-import jakarta.annotation.security.RolesAllowed;
-import jakarta.enterprise.context.RequestScoped;
-import jakarta.inject.Inject;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.MediaType;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.service.impl.*;
+import jakarta.annotation.security.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @RequestScoped
 @Path("/api/v1/specialties")

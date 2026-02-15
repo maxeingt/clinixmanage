@@ -3,6 +3,7 @@ package gt.com.xfactory.entity;
 import io.quarkus.hibernate.orm.panache.*;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.envers.*;
 
 import java.io.*;
@@ -47,5 +48,9 @@ public class DoctorEntity extends PanacheEntityBase implements Serializable {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
     private UserEntity user;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
 }

@@ -2,15 +2,12 @@ package gt.com.xfactory.entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
-import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.annotations.TenantId;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Getter
 @Setter
@@ -41,6 +38,10 @@ public class MedicalHistoryPathologicalFamEntity extends PanacheEntityBase imple
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

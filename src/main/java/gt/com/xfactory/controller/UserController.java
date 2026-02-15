@@ -1,6 +1,7 @@
 package gt.com.xfactory.controller;
 
 import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.service.impl.*;
 import jakarta.annotation.security.*;

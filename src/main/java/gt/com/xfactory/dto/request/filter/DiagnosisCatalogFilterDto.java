@@ -8,4 +8,7 @@ public class DiagnosisCatalogFilterDto {
 
     @QueryParam("search")
     public String search;
+
+    @QueryParam("code")
+    public String code;
 }

@@ -1,16 +1,22 @@
 package gt.com.xfactory.service.impl;
 
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
 
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
+
+import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
 @ApplicationScoped
 @Slf4j
@@ -28,6 +34,15 @@ public class SpecialtyService {
                 .stream()
                 .map(toSpecialtyDto)
                 .collect(Collectors.toList());
+    }
+
+    public PageResponse<SpecialtyDto> getSpecialtiesPaginated(SpecialtyFilterDto filter, @Valid CommonPageRequest pageRequest) {
+        log.info("Fetching specialties with filter - pageRequest: {}, filter: {}", pageRequest, filter);
+
+        var fb = FilterBuilder.create()
+                .addLike(filter.name, "name");
+
+        return toPageResponse(specialtyRepository, fb.buildQuery(), pageRequest, fb.getParams(), toSpecialtyDto);
     }
 
     public SpecialtyDto getSpecialtyById(UUID specialtyId) {

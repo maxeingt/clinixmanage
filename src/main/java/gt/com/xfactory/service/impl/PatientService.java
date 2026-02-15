@@ -80,7 +80,11 @@ public class PatientService {
                         "(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))",
                         "name", filter.name)
                 .addLike(filter.phone, "phone")
-                .addLike(filter.maritalStatus, "maritalStatus");
+                .addLike(filter.maritalStatus, "maritalStatus")
+                .addLike(filter.email, "email")
+                .addLike(filter.dpi, "dpi")
+                .addEquals(StringUtils.isNotBlank(filter.gender) ? GenderType.fromValue(filter.gender) : null, "gender")
+                .addEquals(StringUtils.isNotBlank(filter.bloodGroup) ? BloodType.fromValue(filter.bloodGroup) : null, "bloodGroup");
 
         return toPageResponse(patientRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }

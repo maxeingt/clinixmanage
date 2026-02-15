@@ -8,12 +8,12 @@ import lombok.ToString;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.TenantId;
 import org.hibernate.type.SqlTypes;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Getter
 @Setter
@@ -54,6 +54,10 @@ public class SpecialtyFormTemplateEntity extends PanacheEntityBase implements Se
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     protected void onCreate() {

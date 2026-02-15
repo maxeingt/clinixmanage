@@ -19,6 +19,20 @@ public class PatientFilterDto {
     @QueryParam("maritalStatus")
     public String maritalStatus;
 
+    @QueryParam("gender")
+    public String gender;
+
+    @QueryParam("bloodGroup")
+    public String bloodGroup;
+
+    @QueryParam("email")
+    @Pattern(regexp = "^[A-Za-z0-9@._%+-]{1,50}$", message = "Email contains invalid characters.")
+    public String email;
+
+    @QueryParam("dpi")
+    @Pattern(regexp = "^[0-9]{1,20}$", message = "DPI contains invalid characters.")
+    public String dpi;
+
     @QueryParam("appointmentDateFrom")
     public LocalDateTime appointmentDateFrom;
 

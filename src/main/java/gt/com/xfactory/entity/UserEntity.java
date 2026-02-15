@@ -2,12 +2,12 @@ package gt.com.xfactory.entity;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.TenantId;
 
-import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.io.*;
+import java.time.*;
+import java.util.*;
 
 @Entity
 @Table(name = "\"user\"")
@@ -46,6 +46,10 @@ public class UserEntity extends PanacheEntityBase implements Serializable {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @TenantId
+    @Column(name = "organization_id", nullable = false)
+    private UUID organizationId;
 
     @PrePersist
     public void prePersist() {

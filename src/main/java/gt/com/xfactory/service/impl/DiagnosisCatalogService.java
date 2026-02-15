@@ -31,7 +31,8 @@ public class DiagnosisCatalogService {
         var fb = FilterBuilder.create()
                 .addCondition(StringUtils.isNotBlank(filter.search),
                         "(LOWER(code) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(name) LIKE LOWER(CONCAT('%', :search, '%')))",
-                        "search", filter.search);
+                        "search", filter.search)
+                .addLike(filter.code, "code");
 
         return toPageResponse(diagnosisCatalogRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }

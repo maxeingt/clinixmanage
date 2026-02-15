@@ -1,18 +1,22 @@
 package gt.com.xfactory.service.impl;
 
-import gt.com.xfactory.dto.request.UserRequest;
-import gt.com.xfactory.dto.response.UserDto;
-import gt.com.xfactory.entity.UserEntity;
+import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
+import gt.com.xfactory.dto.response.*;
+import gt.com.xfactory.entity.*;
 import gt.com.xfactory.repository.*;
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
-import jakarta.ws.rs.NotFoundException;
-import lombok.extern.slf4j.Slf4j;
+import gt.com.xfactory.utils.*;
+import jakarta.enterprise.context.*;
+import jakarta.inject.*;
+import jakarta.transaction.*;
+import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import lombok.extern.slf4j.*;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Function;
+import java.util.*;
+import java.util.function.*;
+
+import static gt.com.xfactory.dto.response.PageResponse.toPageResponse;
 
 @ApplicationScoped
 @Slf4j
@@ -32,6 +36,17 @@ public class UserService {
         return userRepository.listAll().stream()
                 .map(toDto)
                 .toList();
+    }
+
+    public PageResponse<UserDto> getUsersPaginated(UserFilterDto filter, @Valid CommonPageRequest pageRequest) {
+        log.info("Fetching users with filter - pageRequest: {}, filter: {}", pageRequest, filter);
+
+        var fb = FilterBuilder.create()
+                .addLike(filter.username, "username")
+                .addLike(filter.email, "email")
+                .addEquals(filter.role, "role");
+
+        return toPageResponse(userRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }
 
     public UserDto getUserById(UUID id) {
