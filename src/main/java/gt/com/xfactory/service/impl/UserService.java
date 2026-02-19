@@ -31,6 +31,12 @@ public class UserService {
     @Inject
     KeycloakAdminService keycloakAdminService;
 
+    @Inject
+    SecurityContextService securityContextService;
+
+    @Inject
+    OrganizationRepository organizationRepository;
+
     public List<UserDto> getAllUsers() {
         log.info("Fetching all users");
         return userRepository.listAll().stream()
@@ -71,23 +77,25 @@ public class UserService {
             throw new IllegalArgumentException("Password is required");
         }
 
+        // 🔐 Obtener contexto del JWT
+        String organizationId = securityContextService.getCurrentOrganizationId().toString();
+        String organizationSlug = securityContextService.getCurrentOrganizationSlug();
+
         String role = request.getRole() != null ? request.getRole() : "user";
 
         // Crear usuario en Keycloak
-        String keycloakId = keycloakAdminService.createUser(
-                request.getUsername(), request.getEmail(), request.getPassword(), role);
+        UserEntity user = buildAndPersistUser(
+                request.getUsername(),
+                request.getEmail(),
+                request.getPassword(),
+                request.getFirstName(),
+                request.getLastName(),
+                role,
+                organizationId,
+                organizationSlug
+        );
 
-        // Crear usuario en BD local
-        UserEntity user = new UserEntity();
-        user.setKeycloakId(keycloakId);
-        user.setUsername(request.getUsername());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
-        user.setRole(role);
-
-        userRepository.persist(user);
-        log.info("User created with id: {} and keycloakId: {}", user.getId(), keycloakId);
+        log.info("User created with id: {} and keycloakId: {}", user.getId(), user.getKeycloakId());
 
         return toDto.apply(user);
     }
@@ -146,6 +154,90 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
         keycloakAdminService.changePassword(user.getKeycloakId(), oldPassword, newPassword);
+    }
+
+    @Transactional
+    public UserDto createAdminForOrganization(UUID orgId, AdminRequest request) {
+
+        log.info("Creating ADMIN for organization: {}", orgId);
+
+        // 1. Validar que la organización exista y esté activa
+        OrganizationEntity organization = organizationRepository.findByIdOptional(orgId)
+                .filter(OrganizationEntity::getActive)
+                .orElseThrow(() ->
+                        new NotFoundException("Organization not found with id: " + orgId));
+
+        // 2. Validar unicidad global (username y email son únicos en Keycloak realm)
+        validateGlobalUniqueness(request.getUsername(), request.getEmail());
+
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new BadRequestException("Password is required");
+        }
+
+        UserEntity user = buildAndPersistUser(
+                request.getUsername(),
+                request.getEmail(),
+                request.getPassword(),
+                request.getFirstName(),
+                request.getLastName(),
+                "admin",
+                organization.getId().toString(),
+                organization.getSlug()
+        );
+
+        log.info("Admin created with id: {} for organization: {}", user.getId(), orgId);
+
+        return toDto.apply(user);
+    }
+
+    private void validateGlobalUniqueness(String username, String email) {
+        // Native query para evitar el filtro automático de @TenantId
+        long usernameCount = (long) userRepository.getEntityManager()
+                .createNativeQuery("SELECT COUNT(*) FROM \"user\" WHERE username = :username")
+                .setParameter("username", username)
+                .getSingleResult();
+
+        if (usernameCount > 0) {
+            throw new BadRequestException("Username already exists");
+        }
+
+        long emailCount = (long) userRepository.getEntityManager()
+                .createNativeQuery("SELECT COUNT(*) FROM \"user\" WHERE email = :email")
+                .setParameter("email", email)
+                .getSingleResult();
+
+        if (emailCount > 0) {
+            throw new BadRequestException("Email already exists");
+        }
+    }
+
+    private UserEntity buildAndPersistUser(
+            String username,
+            String email,
+            String password,
+            String firstName,
+            String lastName,
+            String role,
+            String organizationId,
+            String organizationSlug
+    ) {
+
+        // Crear en Keycloak
+        String keycloakId = keycloakAdminService.createUser(
+                username, email, password, role, organizationId, organizationSlug);
+
+        UserEntity user = new UserEntity();
+        user.setKeycloakId(keycloakId);
+        user.setUsername(username);
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        user.setEmail(email);
+        user.setRole(role);
+        user.setActive(true);
+
+        userRepository.persist(user);
+
+        return user;
     }
 
     // ============ Mappers ============

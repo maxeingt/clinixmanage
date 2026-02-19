@@ -5,6 +5,8 @@ import gt.com.xfactory.entity.*;
 import gt.com.xfactory.repository.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import jakarta.transaction.*;
 import lombok.extern.slf4j.*;
 import org.eclipse.microprofile.jwt.*;
@@ -76,9 +78,8 @@ public class AuthService {
         try {
             Object realmAccess = jwt.getClaim("realm_access");
 
-            if (realmAccess instanceof jakarta.json.JsonObject) {
-                jakarta.json.JsonObject jsonObj = (jakarta.json.JsonObject) realmAccess;
-                jakarta.json.JsonArray rolesArray = jsonObj.getJsonArray("roles");
+            if (realmAccess instanceof JsonObject jsonObj) {
+                JsonArray rolesArray = jsonObj.getJsonArray("roles");
                 if (rolesArray != null) {
                     for (int i = 0; i < rolesArray.size(); i++) {
                         allRoles.add(rolesArray.getString(i));
@@ -88,8 +89,7 @@ public class AuthService {
                 Map<String, Object> realmAccessMap = (Map<String, Object>) realmAccess;
                 Object roles = realmAccessMap.get("roles");
 
-                if (roles instanceof jakarta.json.JsonArray) {
-                    jakarta.json.JsonArray rolesArray = (jakarta.json.JsonArray) roles;
+                if (roles instanceof JsonArray rolesArray) {
                     for (int i = 0; i < rolesArray.size(); i++) {
                         allRoles.add(rolesArray.getString(i));
                     }
@@ -110,6 +110,9 @@ public class AuthService {
     }
 
     private String determineRole(Set<String> keycloakRoles) {
+        if (keycloakRoles.contains("super_admin")) {
+            return "SUPER_ADMIN";
+        }
         if (keycloakRoles.contains("admin")) {
             return "ADMIN";
         }
@@ -119,6 +122,7 @@ public class AuthService {
         if (keycloakRoles.contains("secretary")) {
             return "SECRETARY";
         }
-        return "USER";
+        throw new jakarta.ws.rs.ForbiddenException(
+                "Usuario sin rol válido asignado en Keycloak. Roles encontrados: " + keycloakRoles);
     }
 }

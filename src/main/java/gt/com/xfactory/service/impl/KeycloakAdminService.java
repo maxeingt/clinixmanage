@@ -68,7 +68,7 @@ public class KeycloakAdminService {
     /**
      * Crea un usuario en Keycloak y retorna su ID.
      */
-    public String createUser(String username, String email, String password, String role) {
+    public String createUser(String username, String email, String password, String role, String organizationId, String organizationSlug) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
         user.setEmail(email);
@@ -80,6 +80,11 @@ public class KeycloakAdminService {
         credential.setValue(password);
         credential.setTemporary(false);
         user.setCredentials(Collections.singletonList(credential));
+        Map<String, List<String>> attributes = new HashMap<>();
+        attributes.put("organization_id", List.of(organizationId));
+        attributes.put("organization_slug", List.of(organizationSlug));
+
+        user.setAttributes(attributes);
 
         try (Response response = getUsersResource().create(user)) {
             if (response.getStatus() == 201) {
@@ -88,8 +93,7 @@ public class KeycloakAdminService {
                 log.info("Usuario creado en Keycloak con id: {}", keycloakId);
 
                 try {
-                    assignRealmRole(keycloakId, "user");
-                    if (role != null && !role.isBlank() && !role.equalsIgnoreCase("user")) {
+                    if (role != null && !role.isBlank()) {
                         assignRealmRole(keycloakId, role);
                     }
                 } catch (Exception e) {

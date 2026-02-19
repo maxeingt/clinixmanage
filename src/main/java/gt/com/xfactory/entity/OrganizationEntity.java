@@ -18,8 +18,8 @@ import java.util.*;
 public class OrganizationEntity extends PanacheEntityBase implements Serializable {
 
     @Id
-    @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(columnDefinition = "uuid", updatable = false, nullable = false)
     private UUID id;
 
     @Column(name = "name", nullable = false, length = 200)

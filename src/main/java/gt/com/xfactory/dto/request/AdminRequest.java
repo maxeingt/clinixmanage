@@ -7,7 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserRequest {
+public class AdminRequest {
+
     @NotBlank(message = "Username is required")
     @Size(max = 100, message = "Username must not exceed 100 characters")
     private String username;
@@ -19,9 +20,6 @@ public class UserRequest {
 
     @Size(max = 255, message = "Password must not exceed 255 characters")
     private String password;
-
-    @Size(max = 20, message = "Role must not exceed 20 characters")
-    private String role;
 
     @Size(max = 100, message = "First name must not exceed 100 characters")
     private String firstName;
