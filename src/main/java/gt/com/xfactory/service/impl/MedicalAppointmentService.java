@@ -70,6 +70,28 @@ public class MedicalAppointmentService {
                 .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + clinicId));
     }
 
+    private void applyRequestFields(MedicalAppointmentEntity appointment, MedicalAppointmentRequest request) {
+        appointment.setPatient(findPatientOrThrow(request.getPatientId()));
+        appointment.setDoctor(findDoctorOrThrow(request.getDoctorId()));
+        appointment.setClinic(findClinicOrThrow(request.getClinicId()));
+        appointment.setAppointmentDate(request.getAppointmentDate());
+        appointment.setReason(request.getReason());
+        appointment.setDiagnosis(request.getDiagnosis());
+        appointment.setNotes(request.getNotes());
+
+        if (request.getFollowUpAppointmentId() != null) {
+            var followUp = medicalAppointmentRepository.findByIdOptional(request.getFollowUpAppointmentId())
+                    .orElseThrow(() -> new NotFoundException("Follow-up appointment not found with id: " + request.getFollowUpAppointmentId()));
+            appointment.setFollowUpAppointment(followUp);
+        }
+
+        if (request.getSpecialtyId() != null) {
+            var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
+                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
+            appointment.setSpecialty(specialty);
+        }
+    }
+
     public List<MedicalAppointmentDto> getMedicalAppointmentsByPatientId(UUID patientId, MedicalAppointmentFilterDto filter) {
         log.info("Fetching medical appointments for patient: {} with filter - doctorId: {}, clinicId: {}",
                 patientId, filter != null ? filter.doctorId : null, filter != null ? filter.clinicId : null);
@@ -92,36 +114,14 @@ public class MedicalAppointmentService {
     public MedicalAppointmentDto createMedicalAppointment(MedicalAppointmentRequest request) {
         log.info("Creating medical appointment for patient: {}", request.getPatientId());
 
-        var patient = findPatientOrThrow(request.getPatientId());
-        var doctor = findDoctorOrThrow(request.getDoctorId());
-        var clinic = findClinicOrThrow(request.getClinicId());
-
         MedicalAppointmentEntity appointment = new MedicalAppointmentEntity();
-        appointment.setPatient(patient);
-        appointment.setDoctor(doctor);
-        appointment.setClinic(clinic);
-        appointment.setAppointmentDate(request.getAppointmentDate());
-        appointment.setReason(request.getReason());
-        appointment.setDiagnosis(request.getDiagnosis());
-        appointment.setNotes(request.getNotes());
+        applyRequestFields(appointment, request);
         appointment.setSource(AppointmentSource.web);
-
-        if (request.getFollowUpAppointmentId() != null) {
-            var followUp = medicalAppointmentRepository.findByIdOptional(request.getFollowUpAppointmentId())
-                    .orElseThrow(() -> new NotFoundException("Follow-up appointment not found with id: " + request.getFollowUpAppointmentId()));
-            appointment.setFollowUpAppointment(followUp);
-        }
 
         if (request.getStatus() != null) {
             applyStatusTransition(appointment, request.getStatus(), request.getCancellationReason());
         } else {
             appointment.setStatus(AppointmentStatus.scheduled);
-        }
-
-        if (request.getSpecialtyId() != null) {
-            var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
-                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
-            appointment.setSpecialty(specialty);
         }
 
         medicalAppointmentRepository.persist(appointment);
@@ -140,32 +140,10 @@ public class MedicalAppointmentService {
 
         validateModifiable(appointment);
 
-        var patient = findPatientOrThrow(request.getPatientId());
-        var doctor = findDoctorOrThrow(request.getDoctorId());
-        var clinic = findClinicOrThrow(request.getClinicId());
-
-        appointment.setPatient(patient);
-        appointment.setDoctor(doctor);
-        appointment.setClinic(clinic);
-        appointment.setAppointmentDate(request.getAppointmentDate());
-        appointment.setReason(request.getReason());
-        appointment.setDiagnosis(request.getDiagnosis());
-        appointment.setNotes(request.getNotes());
-
-        if (request.getFollowUpAppointmentId() != null) {
-            var followUp = medicalAppointmentRepository.findByIdOptional(request.getFollowUpAppointmentId())
-                    .orElseThrow(() -> new NotFoundException("Follow-up appointment not found with id: " + request.getFollowUpAppointmentId()));
-            appointment.setFollowUpAppointment(followUp);
-        }
+        applyRequestFields(appointment, request);
 
         if (request.getStatus() != null) {
             applyStatusTransition(appointment, request.getStatus(), request.getCancellationReason());
-        }
-
-        if (request.getSpecialtyId() != null) {
-            var specialty = specialtyRepository.findByIdOptional(request.getSpecialtyId())
-                    .orElseThrow(() -> new NotFoundException("Specialty not found with id: " + request.getSpecialtyId()));
-            appointment.setSpecialty(specialty);
         }
 
         medicalAppointmentRepository.persist(appointment);
