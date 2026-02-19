@@ -51,12 +51,30 @@ public class MedicalAppointmentService {
         return securityContextService.getCurrentDoctorId();
     }
 
+    private boolean isSecretary() {
+        return securityContextService.hasRole("secretary") && !securityContextService.hasRole("admin");
+    }
+
+    private PatientEntity findPatientOrThrow(UUID patientId) {
+        return patientRepository.findByIdOptional(patientId)
+                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+    }
+
+    private DoctorEntity findDoctorOrThrow(UUID doctorId) {
+        return doctorRepository.findByIdOptional(doctorId)
+                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + doctorId));
+    }
+
+    private ClinicEntity findClinicOrThrow(UUID clinicId) {
+        return clinicRepository.findByIdOptional(clinicId)
+                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + clinicId));
+    }
+
     public List<MedicalAppointmentDto> getMedicalAppointmentsByPatientId(UUID patientId, MedicalAppointmentFilterDto filter) {
         log.info("Fetching medical appointments for patient: {} with filter - doctorId: {}, clinicId: {}",
                 patientId, filter != null ? filter.doctorId : null, filter != null ? filter.clinicId : null);
 
-        patientRepository.findByIdOptional(patientId)
-                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
+        findPatientOrThrow(patientId);
 
         UUID currentDoctorId = getCurrentDoctorId();
         if (currentDoctorId != null) {
@@ -74,14 +92,9 @@ public class MedicalAppointmentService {
     public MedicalAppointmentDto createMedicalAppointment(MedicalAppointmentRequest request) {
         log.info("Creating medical appointment for patient: {}", request.getPatientId());
 
-        var patient = patientRepository.findByIdOptional(request.getPatientId())
-                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
-
-        var doctor = doctorRepository.findByIdOptional(request.getDoctorId())
-                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + request.getDoctorId()));
-
-        var clinic = clinicRepository.findByIdOptional(request.getClinicId())
-                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + request.getClinicId()));
+        var patient = findPatientOrThrow(request.getPatientId());
+        var doctor = findDoctorOrThrow(request.getDoctorId());
+        var clinic = findClinicOrThrow(request.getClinicId());
 
         MedicalAppointmentEntity appointment = new MedicalAppointmentEntity();
         appointment.setPatient(patient);
@@ -127,14 +140,9 @@ public class MedicalAppointmentService {
 
         validateModifiable(appointment);
 
-        var patient = patientRepository.findByIdOptional(request.getPatientId())
-                .orElseThrow(() -> new NotFoundException("Patient not found with id: " + request.getPatientId()));
-
-        var doctor = doctorRepository.findByIdOptional(request.getDoctorId())
-                .orElseThrow(() -> new NotFoundException("Doctor not found with id: " + request.getDoctorId()));
-
-        var clinic = clinicRepository.findByIdOptional(request.getClinicId())
-                .orElseThrow(() -> new NotFoundException("Clinic not found with id: " + request.getClinicId()));
+        var patient = findPatientOrThrow(request.getPatientId());
+        var doctor = findDoctorOrThrow(request.getDoctorId());
+        var clinic = findClinicOrThrow(request.getClinicId());
 
         appointment.setPatient(patient);
         appointment.setDoctor(doctor);
@@ -269,7 +277,7 @@ public class MedicalAppointmentService {
     }
 
     public MedicalAppointmentDto toMedicalAppointmentDto(MedicalAppointmentEntity entity) {
-        return MedicalAppointmentDto.builder()
+        MedicalAppointmentDto dto = MedicalAppointmentDto.builder()
                 .id(entity.getId())
                 .patientId(entity.getPatient().getId())
                 .patientName(entity.getPatient().getFirstName() + " " + entity.getPatient().getLastName())
@@ -303,5 +311,13 @@ public class MedicalAppointmentService {
                         .collect(Collectors.toList()) : Collections.emptyList())
                 .createdAt(entity.getCreatedAt())
                 .build();
+
+        if (isSecretary()) {
+            dto.setDiagnosis(null);
+            dto.setNotes(null);
+            dto.setDiagnoses(null);
+        }
+
+        return dto;
     }
 }

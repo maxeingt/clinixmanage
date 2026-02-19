@@ -55,19 +55,6 @@ public class LabOrderService {
         return securityContextService.getCurrentDoctorId();
     }
 
-    private boolean isSecretary() {
-        return securityContextService.hasRole("secretary") && !securityContextService.hasRole("admin");
-    }
-
-    private LabOrderDto mapToDto(LabOrderEntity entity) {
-        LabOrderDto dto = toLabOrderDto.apply(entity);
-        if (isSecretary()) {
-            dto.setResults(null);
-            dto.setAttachments(null);
-        }
-        return dto;
-    }
-
     public PageResponse<LabOrderDto> getLabOrders(LabOrderFilterDto filter, CommonPageRequest pageRequest) {
         log.info("Fetching lab orders with filter");
 
@@ -86,7 +73,7 @@ public class LabOrderService {
                         "appointment.clinic.id = :clinicId",
                         "clinicId", filter.clinicId);
 
-        return toPageResponse(labOrderRepository, fb.buildQuery(), pageRequest, fb.getParams(), this::mapToDto);
+        return toPageResponse(labOrderRepository, fb.buildQuery(), pageRequest, fb.getParams(), toLabOrderDto);
     }
 
     public List<LabOrderDto> getLabOrdersByPatientId(UUID patientId) {
@@ -99,7 +86,7 @@ public class LabOrderService {
         List<LabOrderEntity> orders = currentDoctorId != null
                 ? labOrderRepository.findByPatientIdAndDoctorId(patientId, currentDoctorId)
                 : labOrderRepository.findByPatientId(patientId);
-        return orders.stream().map(this::mapToDto).collect(Collectors.toList());
+        return orders.stream().map(toLabOrderDto).collect(Collectors.toList());
     }
 
     public LabOrderDto getLabOrderById(UUID id) {
@@ -110,7 +97,7 @@ public class LabOrderService {
 
         securityContextService.validateDoctorOwnership(order.getDoctor().getId());
 
-        return mapToDto(order);
+        return toLabOrderDto.apply(order);
     }
 
     @Transactional
