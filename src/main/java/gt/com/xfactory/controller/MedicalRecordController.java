@@ -16,7 +16,7 @@ import java.util.*;
 @RequestScoped
 @Path("/api/v1/medical-records")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"admin", "doctor"})
 public class MedicalRecordController {
 
     @Inject
@@ -48,7 +48,7 @@ public class MedicalRecordController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response createMedicalRecord(@Valid MedicalRecordRequest request) {
         MedicalRecordDto created = medicalRecordService.createMedicalRecord(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -57,7 +57,7 @@ public class MedicalRecordController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public MedicalRecordDto updateMedicalRecord(
             @PathParam("id") UUID recordId,
             @Valid MedicalRecordRequest request) {
@@ -66,7 +66,7 @@ public class MedicalRecordController {
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response deleteMedicalRecord(@PathParam("id") UUID recordId) {
         medicalRecordService.deleteMedicalRecord(recordId);
         return Response.noContent().build();
@@ -95,7 +95,7 @@ public class MedicalRecordController {
     @POST
     @Path("/prescriptions")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response createPrescription(@Valid PrescriptionRequest request) {
         PrescriptionDto created = prescriptionService.createPrescription(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -114,7 +114,7 @@ public class MedicalRecordController {
 
     @DELETE
     @Path("/prescriptions/{id}")
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response deletePrescription(@PathParam("id") UUID prescriptionId) {
         prescriptionService.deletePrescription(prescriptionId);
         return Response.noContent().build();

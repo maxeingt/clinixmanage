@@ -108,10 +108,7 @@ public class LabOrderService {
         LabOrderEntity order = labOrderRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + id));
 
-        UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null && !order.getDoctor().getId().equals(currentDoctorId)) {
-            throw new ForbiddenException("No tiene acceso a esta orden de laboratorio");
-        }
+        securityContextService.validateDoctorOwnership(order.getDoctor().getId());
 
         return mapToDto(order);
     }
@@ -158,6 +155,8 @@ public class LabOrderService {
         var order = labOrderRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + id));
 
+        securityContextService.validateDoctorOwnership(order.getDoctor().getId());
+
         if (request.getNotes() != null) order.setNotes(request.getNotes());
 
         if (request.getAppointmentId() != null) {
@@ -179,6 +178,8 @@ public class LabOrderService {
         var order = labOrderRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + id));
 
+        securityContextService.validateDoctorOwnership(order.getDoctor().getId());
+
         labOrderRepository.delete(order);
         log.info("Lab order deleted: {}", id);
     }
@@ -189,6 +190,8 @@ public class LabOrderService {
 
         var order = labOrderRepository.findByIdOptional(orderId)
                 .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + orderId));
+
+        securityContextService.validateDoctorOwnership(order.getDoctor().getId());
 
         LabResultEntity result = mapResultRequestToEntity(request, order);
         labResultRepository.persist(result);
@@ -203,6 +206,8 @@ public class LabOrderService {
 
         var result = labResultRepository.findByIdOptional(resultId)
                 .orElseThrow(() -> new NotFoundException("Lab result not found with id: " + resultId));
+
+        securityContextService.validateDoctorOwnership(result.getLabOrder().getDoctor().getId());
 
         if (request.getTestName() != null) result.setTestName(request.getTestName());
         if (request.getTestCode() != null) result.setTestCode(request.getTestCode());
@@ -225,6 +230,8 @@ public class LabOrderService {
 
         var result = labResultRepository.findByIdOptional(resultId)
                 .orElseThrow(() -> new NotFoundException("Lab result not found with id: " + resultId));
+
+        securityContextService.validateDoctorOwnership(result.getLabOrder().getDoctor().getId());
 
         labResultRepository.delete(result);
         log.info("Lab result deleted: {}", resultId);
@@ -302,13 +309,6 @@ public class LabOrderService {
 
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-    private void validateDoctorAccess(LabOrderEntity order) {
-        UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null && !order.getDoctor().getId().equals(currentDoctorId)) {
-            throw new ForbiddenException("No tiene acceso a esta orden de laboratorio");
-        }
-    }
-
     @Transactional
     public LabOrderAttachmentDto uploadAttachment(UUID orderId, FileUpload file) {
         log.info("Uploading attachment to lab order: {}", orderId);
@@ -316,7 +316,7 @@ public class LabOrderService {
         LabOrderEntity order = labOrderRepository.findByIdOptional(orderId)
                 .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + orderId));
 
-        validateDoctorAccess(order);
+        securityContextService.validateDoctorOwnership(order.getDoctor().getId());
 
         String contentType = file.contentType();
         if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
@@ -360,7 +360,7 @@ public class LabOrderService {
         LabOrderAttachmentEntity attachment = labOrderAttachmentRepository.findByIdOptional(attachmentId)
                 .orElseThrow(() -> new NotFoundException("Attachment not found with id: " + attachmentId));
 
-        validateDoctorAccess(attachment.getLabOrder());
+        securityContextService.validateDoctorOwnership(attachment.getLabOrder().getDoctor().getId());
         return attachment;
     }
 

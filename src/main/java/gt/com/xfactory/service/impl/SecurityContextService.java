@@ -84,6 +84,13 @@ public class SecurityContextService {
         return slugClaim.toString();
     }
 
+    public void validateDoctorOwnership(UUID resourceDoctorId) {
+        UUID currentDoctorId = getCurrentDoctorId();
+        if (currentDoctorId != null && !currentDoctorId.equals(resourceDoctorId)) {
+            throw new ForbiddenException("No tiene acceso a este recurso");
+        }
+    }
+
     public void validateOwnDoctorAccess(UUID requestedDoctorId) {
         if (securityIdentity.hasRole("admin")) return;
         String keycloakId = jwt.getSubject();

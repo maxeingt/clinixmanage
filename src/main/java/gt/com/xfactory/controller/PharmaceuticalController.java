@@ -20,7 +20,7 @@ import java.util.UUID;
 @RequestScoped
 @Path("/api/v1/pharmaceuticals")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed("admin")
 public class PharmaceuticalController {
 
     @Inject
@@ -47,7 +47,7 @@ public class PharmaceuticalController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+
     public Response create(@Valid PharmaceuticalRequest request) {
         PharmaceuticalDto created = pharmaceuticalService.create(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -56,14 +56,14 @@ public class PharmaceuticalController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+
     public PharmaceuticalDto update(@PathParam("id") UUID id, @Valid PharmaceuticalRequest request) {
         return pharmaceuticalService.update(id, request);
     }
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed("admin")
+
     public Response delete(@PathParam("id") UUID id) {
         pharmaceuticalService.delete(id);
         return Response.noContent().build();

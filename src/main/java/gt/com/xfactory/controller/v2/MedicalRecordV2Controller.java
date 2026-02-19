@@ -13,7 +13,7 @@ import jakarta.ws.rs.core.*;
 @RequestScoped
 @Path("/api/v2/medical-records")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"admin", "doctor"})
 public class MedicalRecordV2Controller {
 
     @Inject

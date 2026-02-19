@@ -73,10 +73,16 @@ public class PrescriptionService {
     public List<PrescriptionDto> getPrescriptionsByMedicalRecordId(UUID medicalRecordId) {
         log.info("Fetching prescriptions for medical record: {}", medicalRecordId);
 
-        return prescriptionRepository.findByMedicalRecordId(medicalRecordId)
-                .stream()
-                .map(toPrescriptionDto)
-                .collect(Collectors.toList());
+        UUID currentDoctorId = getCurrentDoctorId();
+        List<PrescriptionEntity> prescriptions = prescriptionRepository.findByMedicalRecordId(medicalRecordId);
+
+        if (currentDoctorId != null) {
+            prescriptions = prescriptions.stream()
+                    .filter(p -> currentDoctorId.equals(p.getDoctor().getId()))
+                    .toList();
+        }
+
+        return prescriptions.stream().map(toPrescriptionDto).collect(Collectors.toList());
     }
 
     @Transactional
@@ -133,9 +139,12 @@ public class PrescriptionService {
     public PrescriptionDto getPrescriptionById(UUID prescriptionId) {
         log.info("Fetching prescription by id: {}", prescriptionId);
 
-        return prescriptionRepository.findByIdOptional(prescriptionId)
-                .map(toPrescriptionDto)
+        PrescriptionEntity prescription = prescriptionRepository.findByIdOptional(prescriptionId)
                 .orElseThrow(() -> new NotFoundException("Prescription not found with id: " + prescriptionId));
+
+        securityContextService.validateDoctorOwnership(prescription.getDoctor().getId());
+
+        return toPrescriptionDto.apply(prescription);
     }
 
     @Transactional
@@ -144,6 +153,8 @@ public class PrescriptionService {
 
         var prescription = prescriptionRepository.findByIdOptional(prescriptionId)
                 .orElseThrow(() -> new NotFoundException("Prescription not found with id: " + prescriptionId));
+
+        securityContextService.validateDoctorOwnership(prescription.getDoctor().getId());
 
         prescriptionRepository.delete(prescription);
         log.info("Prescription deleted: {}", prescriptionId);

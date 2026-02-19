@@ -15,7 +15,7 @@ import java.util.*;
 @RequestScoped
 @Path("/api/v1/form-templates")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"admin", "doctor"})
 public class SpecialtyFormTemplateController {
 
     @Inject

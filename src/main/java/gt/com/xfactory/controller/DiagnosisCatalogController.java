@@ -16,7 +16,7 @@ import java.util.*;
 @RequestScoped
 @Path("/api/v1/diagnosis-catalog")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"admin", "doctor"})
 public class DiagnosisCatalogController {
 
     @Inject

@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.*;
 @RequestScoped
 @Path("/api/v1/auth")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"super_admin", "admin", "doctor", "secretary"})
 public class AuthController {
 
     @Inject

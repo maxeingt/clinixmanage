@@ -18,7 +18,7 @@ import java.util.*;
 @RequestScoped
 @Path("/api/v1/lab-orders")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"admin", "doctor"})
 public class LabOrderController {
 
     @Inject
@@ -59,7 +59,7 @@ public class LabOrderController {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response createLabOrder(@Valid LabOrderRequest request) {
         LabOrderDto created = labOrderService.createLabOrder(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -68,14 +68,14 @@ public class LabOrderController {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public LabOrderDto updateLabOrder(@PathParam("id") UUID id, @Valid LabOrderRequest request) {
         return labOrderService.updateLabOrder(id, request);
     }
 
     @DELETE
     @Path("/{id}")
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response deleteLabOrder(@PathParam("id") UUID id) {
         labOrderService.deleteLabOrder(id);
         return Response.noContent().build();
@@ -84,7 +84,7 @@ public class LabOrderController {
     @POST
     @Path("/{orderId}/results")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response addResult(@PathParam("orderId") UUID orderId, @Valid LabResultRequest request) {
         LabResultDto created = labOrderService.addResult(orderId, request);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -93,14 +93,14 @@ public class LabOrderController {
     @PUT
     @Path("/results/{resultId}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public LabResultDto updateResult(@PathParam("resultId") UUID resultId, @Valid LabResultRequest request) {
         return labOrderService.updateResult(resultId, request);
     }
 
     @DELETE
     @Path("/results/{resultId}")
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response deleteResult(@PathParam("resultId") UUID resultId) {
         labOrderService.deleteResult(resultId);
         return Response.noContent().build();
@@ -111,7 +111,7 @@ public class LabOrderController {
     @POST
     @Path("/{orderId}/attachments")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response uploadAttachment(@PathParam("orderId") UUID orderId, @RestForm("file") FileUpload file) {
         LabOrderAttachmentDto created = labOrderService.uploadAttachment(orderId, file);
         return Response.status(Response.Status.CREATED).entity(created).build();
@@ -119,7 +119,7 @@ public class LabOrderController {
 
     @GET
     @Path("/attachments/{attachmentId}/download")
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response downloadAttachment(@PathParam("attachmentId") UUID attachmentId) {
         AttachmentDownloadInfo info = labOrderService.getAttachmentDownload(attachmentId);
         String sanitizedFileName = info.getFileName().replaceAll("[^a-zA-Z0-9._-]", "_");
@@ -130,7 +130,7 @@ public class LabOrderController {
 
     @DELETE
     @Path("/attachments/{attachmentId}")
-    @RolesAllowed({"admin", "doctor"})
+    @RolesAllowed("doctor")
     public Response deleteAttachment(@PathParam("attachmentId") UUID attachmentId) {
         labOrderService.deleteAttachment(attachmentId);
         return Response.noContent().build();

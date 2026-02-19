@@ -15,7 +15,7 @@ import java.util.*;
 @RequestScoped
 @Path("/api/v1/dashboard")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed({"user", "admin", "doctor", "secretary"})
+@RolesAllowed({"admin", "doctor", "secretary"})
 public class DashboardController {
 
     @Inject

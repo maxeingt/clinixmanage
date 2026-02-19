@@ -90,10 +90,7 @@ public class MedicalRecordService {
         MedicalAppointmentEntity appointment = medicalAppointmentRepository.findByIdOptional(appointmentId)
                 .orElseThrow(() -> new NotFoundException("Appointment not found with id: " + appointmentId));
 
-        UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null && !appointment.getDoctor().getId().equals(currentDoctorId)) {
-            throw new ForbiddenException("No tiene acceso a los expedientes de esta cita");
-        }
+        securityContextService.validateDoctorOwnership(appointment.getDoctor().getId());
 
         return medicalRecordRepository.findByAppointmentId(appointmentId).stream()
                 .map(toMedicalRecordDto).collect(Collectors.toList());
@@ -105,10 +102,7 @@ public class MedicalRecordService {
         MedicalRecordEntity record = medicalRecordRepository.findByIdOptional(recordId)
                 .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + recordId));
 
-        UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null && !record.getDoctor().getId().equals(currentDoctorId)) {
-            throw new ForbiddenException("No tiene acceso a este expediente");
-        }
+        securityContextService.validateDoctorOwnership(record.getDoctor().getId());
 
         return toMedicalRecordDto.apply(record);
     }
@@ -167,6 +161,8 @@ public class MedicalRecordService {
         var record = medicalRecordRepository.findByIdOptional(recordId)
                 .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + recordId));
 
+        securityContextService.validateDoctorOwnership(record.getDoctor().getId());
+
         if (request.getChiefComplaint() != null) record.setChiefComplaint(request.getChiefComplaint());
         if (request.getPresentIllness() != null) record.setPresentIllness(request.getPresentIllness());
         if (request.getPhysicalExam() != null) record.setPhysicalExam(request.getPhysicalExam());
@@ -187,6 +183,8 @@ public class MedicalRecordService {
 
         var record = medicalRecordRepository.findByIdOptional(recordId)
                 .orElseThrow(() -> new NotFoundException("Medical record not found with id: " + recordId));
+
+        securityContextService.validateDoctorOwnership(record.getDoctor().getId());
 
         medicalRecordRepository.delete(record);
         log.info("Medical record deleted: {}", recordId);
