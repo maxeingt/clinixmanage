@@ -7,6 +7,7 @@ import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
+import jakarta.persistence.*;
 import jakarta.transaction.*;
 import lombok.extern.slf4j.*;
 import org.eclipse.microprofile.jwt.*;
@@ -26,9 +27,10 @@ public class AuthService {
     @Transactional
     public UserDto syncCurrentUser() {
         String keycloakId = jwt.getSubject();
-        log.info("Syncing user - keycloakId: {}", keycloakId);
 
-        UserEntity user = userRepository.findByKeycloakId(keycloakId).orElse(null);
+        // Native query para bypasear @TenantId: syncCurrentUser es el primer endpoint
+        // en cada login y debe encontrar al usuario sin depender de la resolución del tenant.
+        UserEntity user = findByKeycloakIdGlobal(keycloakId);
 
         if (user == null) {
             user = createUserFromToken(keycloakId);
@@ -54,6 +56,17 @@ public class AuthService {
         }
 
         return UserService.toDto.apply(user);
+    }
+
+    private UserEntity findByKeycloakIdGlobal(String keycloakId) {
+        @SuppressWarnings("unchecked")
+        List<UserEntity> results = userRepository.getEntityManager()
+                .createNativeQuery(
+                        "SELECT * FROM \"user\" WHERE keycloak_id = :keycloakId",
+                        UserEntity.class)
+                .setParameter("keycloakId", keycloakId)
+                .getResultList();
+        return results.isEmpty() ? null : results.get(0);
     }
 
     private UserEntity createUserFromToken(String keycloakId) {
@@ -105,7 +118,6 @@ public class AuthService {
             log.error("Error extrayendo realm roles: ", e);
         }
 
-        log.info("Roles extraídos del token: {}", allRoles);
         return allRoles;
     }
 

@@ -38,15 +38,12 @@ public class UserService {
     OrganizationRepository organizationRepository;
 
     public List<UserDto> getAllUsers() {
-        log.info("Fetching all users");
         return userRepository.listAll().stream()
                 .map(toDto)
                 .toList();
     }
 
     public PageResponse<UserDto> getUsersPaginated(UserFilterDto filter, @Valid CommonPageRequest pageRequest) {
-        log.info("Fetching users with filter - pageRequest: {}, filter: {}", pageRequest, filter);
-
         var fb = FilterBuilder.create()
                 .addLike(filter.username, "username")
                 .addLike(filter.email, "email")
@@ -56,14 +53,12 @@ public class UserService {
     }
 
     public UserDto getUserById(UUID id) {
-        log.info("Fetching user by id: {}", id);
         return userRepository.findByIdOptional(id)
                 .map(toDto)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
     }
 
     public UserDto getUserByKeycloakId(String keycloakId) {
-        log.info("Fetching user by keycloakId: {}", keycloakId);
         return userRepository.findByKeycloakId(keycloakId)
                 .map(toDto)
                 .orElseThrow(() -> new NotFoundException("User not found with keycloakId: " + keycloakId));
@@ -102,8 +97,6 @@ public class UserService {
 
     @Transactional
     public UserDto updateUser(UUID id, UserRequest request) {
-        log.info("Updating user with id: {}", id);
-
         UserEntity user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
@@ -129,8 +122,6 @@ public class UserService {
 
     @Transactional
     public UserDto toggleUserStatus(UUID id) {
-        log.info("Toggling user status with id: {}", id);
-
         UserEntity user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
@@ -148,8 +139,6 @@ public class UserService {
     }
 
     public void changePassword(UUID id, String oldPassword, String newPassword) {
-        log.info("Changing password for user with id: {}", id);
-
         UserEntity user = userRepository.findByIdOptional(id)
                 .orElseThrow(() -> new NotFoundException("User not found with id: " + id));
 
@@ -161,11 +150,20 @@ public class UserService {
 
         log.info("Creating ADMIN for organization: {}", orgId);
 
-        // 1. Validar que la organización exista y esté activa
-        OrganizationEntity organization = organizationRepository.findByIdOptional(orgId)
-                .filter(OrganizationEntity::getActive)
-                .orElseThrow(() ->
-                        new NotFoundException("Organization not found with id: " + orgId));
+        // 1. Validar que la organización exista y esté activa (native query para bypasear @TenantId)
+        @SuppressWarnings("unchecked")
+        List<Object[]> orgResults = userRepository.getEntityManager()
+                .createNativeQuery("SELECT id, slug FROM organization WHERE id = :id AND active = true")
+                .setParameter("id", orgId.toString())
+                .getResultList();
+
+        if (orgResults.isEmpty()) {
+            throw new NotFoundException("Organization not found with id: " + orgId);
+        }
+
+        Object[] orgRow = orgResults.get(0);
+        UUID organizationId = orgRow[0] instanceof UUID ? (UUID) orgRow[0] : UUID.fromString(orgRow[0].toString());
+        String organizationSlug = (String) orgRow[1];
 
         // 2. Validar unicidad global (username y email son únicos en Keycloak realm)
         validateGlobalUniqueness(request.getUsername(), request.getEmail());
@@ -181,8 +179,8 @@ public class UserService {
                 request.getFirstName(),
                 request.getLastName(),
                 "admin",
-                organization.getId().toString(),
-                organization.getSlug()
+                organizationId.toString(),
+                organizationSlug
         );
 
         log.info("Admin created with id: {} for organization: {}", user.getId(), orgId);

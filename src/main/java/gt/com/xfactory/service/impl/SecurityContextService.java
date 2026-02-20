@@ -31,14 +31,23 @@ public class SecurityContextService {
      * Retorna el UUID del doctor actual si el usuario tiene rol doctor.
      * Retorna null si es admin o secretary (ven todos los recursos).
      */
+    @SuppressWarnings("unchecked")
     public UUID getCurrentDoctorId() {
         if (securityIdentity.hasRole("admin") || securityIdentity.hasRole("secretary")) {
             return null;
         }
         String keycloakId = jwt.getSubject();
-        return doctorRepository.findByUserKeycloakId(keycloakId)
-                .map(DoctorEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        // Native query para bypasear @TenantId en la resolución del doctor actual
+        List<Object[]> results = doctorRepository.getEntityManager()
+                .createNativeQuery("SELECT d.id FROM doctor d JOIN \"user\" u ON d.user_id = u.id WHERE u.keycloak_id = :keycloakId")
+                .setParameter("keycloakId", keycloakId)
+                .getResultList();
+
+        if (results.isEmpty()) {
+            throw new ForbiddenException("Doctor no encontrado para el usuario actual");
+        }
+        Object id = results.get(0);
+        return id instanceof UUID ? (UUID) id : UUID.fromString(id.toString());
     }
 
     public boolean hasRole(String role) {
@@ -53,11 +62,21 @@ public class SecurityContextService {
         return jwt.getSubject();
     }
 
+    @SuppressWarnings("unchecked")
     public UUID getCurrentUserId() {
         String keycloakId = jwt.getSubject();
-        return userRepository.findByKeycloakId(keycloakId)
-                .map(UserEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Usuario no encontrado"));
+        // Native query para bypasear @TenantId: el tenant podría no estar resuelto
+        // correctamente cuando se consulta el usuario del token actual.
+        List<Object[]> results = userRepository.getEntityManager()
+                .createNativeQuery("SELECT id FROM \"user\" WHERE keycloak_id = :keycloakId")
+                .setParameter("keycloakId", keycloakId)
+                .getResultList();
+
+        if (results.isEmpty()) {
+            throw new ForbiddenException("Usuario no encontrado");
+        }
+        Object id = results.get(0);
+        return id instanceof UUID ? (UUID) id : UUID.fromString(id.toString());
     }
 
     public void validateOwnAccess(UUID requestedUserId) {
@@ -93,10 +112,7 @@ public class SecurityContextService {
 
     public void validateOwnDoctorAccess(UUID requestedDoctorId) {
         if (securityIdentity.hasRole("admin")) return;
-        String keycloakId = jwt.getSubject();
-        UUID currentDoctorId = doctorRepository.findByUserKeycloakId(keycloakId)
-                .map(DoctorEntity::getId)
-                .orElseThrow(() -> new ForbiddenException("Doctor no encontrado para el usuario actual"));
+        UUID currentDoctorId = getCurrentDoctorId();
         if (!requestedDoctorId.equals(currentDoctorId)) {
             throw new ForbiddenException("No tiene acceso a las notificaciones de otro doctor");
         }

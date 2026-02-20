@@ -1,6 +1,7 @@
 package gt.com.xfactory.controller;
 
 import gt.com.xfactory.dto.request.*;
+import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.service.impl.*;
 import gt.com.xfactory.utils.*;
@@ -45,6 +46,16 @@ public class OrganizationController {
     public Response create(@Valid OrganizationRequest request) {
         OrganizationDto created = organizationService.create(request);
         return Response.status(Response.Status.CREATED).entity(created).build();
+    }
+
+    @GET
+    @Path("/{orgId}/users")
+    public PageResponse<UserDto> getUsersByOrganization(
+            @PathParam("orgId") UUID orgId,
+            @Valid @BeanParam CommonPageRequest pageRequest
+    ) {
+        tenantContext.set(orgId.toString());
+        return userService.getUsersPaginated(new UserFilterDto(), pageRequest);
     }
 
     @POST

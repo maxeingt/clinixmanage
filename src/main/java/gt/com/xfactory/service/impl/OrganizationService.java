@@ -6,12 +6,15 @@ import gt.com.xfactory.entity.*;
 import gt.com.xfactory.repository.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
+import jakarta.persistence.*;
 import jakarta.transaction.*;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
 
+import java.sql.*;
+import java.time.*;
 import java.util.*;
-import java.util.function.*;
+import java.util.stream.*;
 
 @ApplicationScoped
 @Slf4j
@@ -20,118 +23,158 @@ public class OrganizationService {
     @Inject
     OrganizationRepository organizationRepository;
 
+    // Native queries sin mapeo a entidad para bypasear el filtro DISCRIMINATOR de @TenantId,
+    // ya que OrganizationEntity no tiene @TenantId (las organizaciones SON los tenants).
+    private EntityManager em() {
+        return organizationRepository.getEntityManager();
+    }
+
     public PageResponse<OrganizationDto> getOrganizations(CommonPageRequest pageRequest) {
-        log.info("Fetching organizations - pageRequest: {}", pageRequest);
+        long totalItems = ((Number) em()
+                .createNativeQuery("SELECT COUNT(*) FROM organization WHERE active = true")
+                .getSingleResult()).longValue();
 
-        StringBuilder query = new StringBuilder("active = true");
-        Map<String, Object> params = new HashMap<>();
+        int totalPages = (int) Math.ceil((double) totalItems / pageRequest.getSize());
 
-        return PageResponse.toPageResponse(
-                organizationRepository,
-                query,
-                pageRequest,
-                params,
-                toDto
-        );
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em()
+                .createNativeQuery("SELECT id, name, slug, legal_name, tax_id, email, phone, address, logo_url, active, subscription_plan, max_users, created_at, updated_at FROM organization WHERE active = true ORDER BY created_at DESC")
+                .setFirstResult(pageRequest.getPage() * pageRequest.getSize())
+                .setMaxResults(pageRequest.getSize())
+                .getResultList();
+
+        List<OrganizationDto> content = rows.stream()
+                .map(this::mapRowToDto)
+                .collect(Collectors.toList());
+
+        return new PageResponse<>(content, pageRequest.getPage(), totalPages, totalItems);
     }
 
     public OrganizationDto getById(UUID id) {
-        log.info("Fetching organization by id: {}", id);
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = em()
+                .createNativeQuery("SELECT id, name, slug, legal_name, tax_id, email, phone, address, logo_url, active, subscription_plan, max_users, created_at, updated_at FROM organization WHERE id = :id AND active = true")
+                .setParameter("id", id.toString())
+                .getResultList();
 
-        OrganizationEntity entity = organizationRepository.findByIdOptional(id)
-                .filter(OrganizationEntity::getActive)
-                .orElseThrow(() ->
-                        new NotFoundException("Organization not found with id: " + id));
-
-        return toDto.apply(entity);
+        return rows.stream().findFirst()
+                .map(this::mapRowToDto)
+                .orElseThrow(() -> new NotFoundException("Organization not found with id: " + id));
     }
 
     @Transactional
     public OrganizationDto create(OrganizationRequest request) {
         log.info("Creating organization with slug: {}", request.getSlug());
 
-        validateSlugUnique(request.getSlug());
+        validateSlugUnique(request.getSlug(), null);
 
-        OrganizationEntity entity = new OrganizationEntity();
-        mapRequestToEntity(request, entity);
+        UUID id = UUID.randomUUID();
+        LocalDateTime now = LocalDateTime.now();
 
-        organizationRepository.persist(entity);
+        em().createNativeQuery("INSERT INTO organization (id, name, slug, legal_name, tax_id, email, phone, address, logo_url, active, subscription_plan, max_users, created_at) VALUES (:id, :name, :slug, :legalName, :taxId, :email, :phone, :address, :logoUrl, true, :subscriptionPlan, :maxUsers, :createdAt)")
+                .setParameter("id", id.toString())
+                .setParameter("name", request.getName())
+                .setParameter("slug", request.getSlug().toLowerCase().trim())
+                .setParameter("legalName", request.getLegalName())
+                .setParameter("taxId", request.getTaxId())
+                .setParameter("email", request.getEmail())
+                .setParameter("phone", request.getPhone())
+                .setParameter("address", request.getAddress())
+                .setParameter("logoUrl", request.getLogoUrl())
+                .setParameter("subscriptionPlan", request.getSubscriptionPlan())
+                .setParameter("maxUsers", request.getMaxUsers())
+                .setParameter("createdAt", now)
+                .executeUpdate();
 
-        log.info("Organization created with id: {}", entity.getId());
+        log.info("Organization created with id: {}", id);
 
-        return toDto.apply(entity);
+        return getById(id);
     }
 
     @Transactional
     public OrganizationDto update(UUID id, OrganizationRequest request) {
-        log.info("Updating organization with id: {}", id);
+        OrganizationDto existing = getById(id);
 
-        OrganizationEntity entity = organizationRepository.findByIdOptional(id)
-                .orElseThrow(() ->
-                        new NotFoundException("Organization not found with id: " + id));
-
-        if (!entity.getSlug().equalsIgnoreCase(request.getSlug())) {
-            validateSlugUnique(request.getSlug());
+        if (!existing.getSlug().equalsIgnoreCase(request.getSlug())) {
+            validateSlugUnique(request.getSlug(), id);
         }
 
-        mapRequestToEntity(request, entity);
+        em().createNativeQuery("UPDATE organization SET name = :name, slug = :slug, legal_name = :legalName, tax_id = :taxId, email = :email, phone = :phone, address = :address, logo_url = :logoUrl, subscription_plan = :subscriptionPlan, max_users = :maxUsers, updated_at = :updatedAt WHERE id = :id")
+                .setParameter("id", id.toString())
+                .setParameter("name", request.getName())
+                .setParameter("slug", request.getSlug().toLowerCase().trim())
+                .setParameter("legalName", request.getLegalName())
+                .setParameter("taxId", request.getTaxId())
+                .setParameter("email", request.getEmail())
+                .setParameter("phone", request.getPhone())
+                .setParameter("address", request.getAddress())
+                .setParameter("logoUrl", request.getLogoUrl())
+                .setParameter("subscriptionPlan", request.getSubscriptionPlan())
+                .setParameter("maxUsers", request.getMaxUsers())
+                .setParameter("updatedAt", LocalDateTime.now())
+                .executeUpdate();
 
-        return toDto.apply(entity);
+        return getById(id);
     }
 
     @Transactional
     public void delete(UUID id) {
-        log.info("Soft deleting organization with id: {}", id);
+        int updated = em().createNativeQuery("UPDATE organization SET active = false, updated_at = :updatedAt WHERE id = :id")
+                .setParameter("id", id.toString())
+                .setParameter("updatedAt", LocalDateTime.now())
+                .executeUpdate();
 
-        OrganizationEntity entity = organizationRepository.findByIdOptional(id)
-                .orElseThrow(() ->
-                        new NotFoundException("Organization not found with id: " + id));
-
-        entity.setActive(false);
-    }
-
-    private void validateSlugUnique(String slug) {
-        organizationRepository.findBySlug(slug.toLowerCase().trim())
-                .filter(OrganizationEntity::getActive)
-                .ifPresent(existing -> {
-                    throw new BadRequestException(
-                            "Slug already exists: " + slug);
-                });
-    }
-
-    private void mapRequestToEntity(OrganizationRequest request,
-                                    OrganizationEntity entity) {
-        entity.setName(request.getName());
-        entity.setSlug(request.getSlug().toLowerCase().trim());
-        entity.setLegalName(request.getLegalName());
-        entity.setTaxId(request.getTaxId());
-        entity.setEmail(request.getEmail());
-        entity.setPhone(request.getPhone());
-        entity.setAddress(request.getAddress());
-        entity.setLogoUrl(request.getLogoUrl());
-        entity.setSubscriptionPlan(request.getSubscriptionPlan());
-        entity.setMaxUsers(request.getMaxUsers());
-
-        if (entity.getActive() == null) {
-            entity.setActive(true);
+        if (updated == 0) {
+            throw new NotFoundException("Organization not found with id: " + id);
         }
     }
 
-    public static final Function<OrganizationEntity, OrganizationDto> toDto =
-            entity -> OrganizationDto.builder()
-                    .id(entity.getId())
-                    .name(entity.getName())
-                    .slug(entity.getSlug())
-                    .legalName(entity.getLegalName())
-                    .taxId(entity.getTaxId())
-                    .email(entity.getEmail())
-                    .phone(entity.getPhone())
-                    .address(entity.getAddress())
-                    .logoUrl(entity.getLogoUrl())
-                    .active(entity.getActive())
-                    .subscriptionPlan(entity.getSubscriptionPlan())
-                    .maxUsers(entity.getMaxUsers())
-                    .createdAt(entity.getCreatedAt())
-                    .updatedAt(entity.getUpdatedAt())
-                    .build();
+    private void validateSlugUnique(String slug, UUID excludeId) {
+        String sql = "SELECT COUNT(*) FROM organization WHERE LOWER(slug) = :slug AND active = true"
+                + (excludeId != null ? " AND id != :excludeId" : "");
+
+        var query = em().createNativeQuery(sql)
+                .setParameter("slug", slug.toLowerCase().trim());
+
+        if (excludeId != null) {
+            query.setParameter("excludeId", excludeId.toString());
+        }
+
+        long count = ((Number) query.getSingleResult()).longValue();
+        if (count > 0) {
+            throw new BadRequestException("Slug already exists: " + slug);
+        }
+    }
+
+    private OrganizationDto mapRowToDto(Object[] row) {
+        return OrganizationDto.builder()
+                .id(toUUID(row[0]))
+                .name((String) row[1])
+                .slug((String) row[2])
+                .legalName((String) row[3])
+                .taxId((String) row[4])
+                .email((String) row[5])
+                .phone((String) row[6])
+                .address((String) row[7])
+                .logoUrl((String) row[8])
+                .active((Boolean) row[9])
+                .subscriptionPlan((String) row[10])
+                .maxUsers(row[11] != null ? ((Number) row[11]).intValue() : null)
+                .createdAt(toLocalDateTime(row[12]))
+                .updatedAt(toLocalDateTime(row[13]))
+                .build();
+    }
+
+    private UUID toUUID(Object value) {
+        if (value == null) return null;
+        if (value instanceof UUID) return (UUID) value;
+        return UUID.fromString(value.toString());
+    }
+
+    private LocalDateTime toLocalDateTime(Object value) {
+        if (value == null) return null;
+        if (value instanceof LocalDateTime) return (LocalDateTime) value;
+        if (value instanceof Timestamp) return ((Timestamp) value).toLocalDateTime();
+        return LocalDateTime.parse(value.toString());
+    }
 }
