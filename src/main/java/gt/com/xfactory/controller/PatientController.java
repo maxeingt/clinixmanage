@@ -33,6 +33,12 @@ public class PatientController {
         return patientService.getPatients(filter, pageRequest);
     }
 
+    @GET
+    @Path("/search")
+    public List<PatientSearchDto> searchPatients(@QueryParam("q") String q) {
+        return patientService.searchPatients(q);
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response createPatient(@Valid PatientRequest request) {

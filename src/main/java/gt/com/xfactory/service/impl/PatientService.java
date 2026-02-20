@@ -12,6 +12,7 @@ import jakarta.inject.*;
 import jakarta.transaction.*;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.*;
 import lombok.extern.slf4j.*;
 import org.apache.commons.lang3.*;
 
@@ -89,9 +90,47 @@ public class PatientService {
         return toPageResponse(patientRepository, fb.buildQuery(), pageRequest, fb.getParams(), toDto);
     }
 
+    public List<PatientSearchDto> searchPatients(String q) {
+        if (q == null || q.trim().length() < 2) {
+            throw new BadRequestException("El término de búsqueda debe tener al menos 2 caracteres");
+        }
+        return patientRepository.searchByTerm(q.trim())
+                .stream()
+                .map(toSearchDto)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public PatientDto createPatient(PatientRequest request) {
         log.info("Creating patient: {} {}", request.getFirstName(), request.getLastName());
+
+        // Verificar duplicado por DPI
+        if (StringUtils.isNotBlank(request.getDpi())) {
+            patientRepository.findByDpi(request.getDpi()).ifPresent(existing ->  {
+                throw new WebApplicationException(
+                        Response.status(Response.Status.CONFLICT)
+                                .entity(Map.of(
+                                        "message", "Ya existe un paciente con este DPI",
+                                        "existingPatientId", existing.getId().toString()
+                                ))
+                                .build()
+                );
+            });
+        }
+
+        // Verificar duplicado por nombre + fecha de nacimiento
+        List<PatientEntity> nameMatches = patientRepository.findByNameAndBirthdate(
+                request.getFirstName(), request.getLastName(), request.getBirthdate());
+        if (!nameMatches.isEmpty()) {
+            throw new WebApplicationException(
+                    Response.status(Response.Status.CONFLICT)
+                            .entity(Map.of(
+                                    "message", "Ya existe un paciente con el mismo nombre y fecha de nacimiento",
+                                    "existingPatientId", nameMatches.get(0).getId().toString()
+                            ))
+                            .build()
+            );
+        }
 
         PatientEntity patient = new PatientEntity();
         patient.setFirstName(request.getFirstName());
@@ -168,16 +207,6 @@ public class PatientService {
     }
 
     public PatientDto getPatientById(UUID patientId) {
-        log.info("Fetching patient by id: {}", patientId);
-
-        UUID currentDoctorId = getCurrentDoctorId();
-        if (currentDoctorId != null) {
-            long count = medicalAppointmentRepository.count("patient.id = ?1 AND doctor.id = ?2", patientId, currentDoctorId);
-            if (count == 0) {
-                throw new ForbiddenException("No tiene acceso a este paciente");
-            }
-        }
-
         return patientRepository.findByIdOptional(patientId)
                 .map(toDto)
                 .orElseThrow(() -> new NotFoundException("Patient not found with id: " + patientId));
@@ -328,6 +357,17 @@ public class PatientService {
                     .patientId(entity.getPatient().getId())
                     .medicalHistoryType(entity.getMedicalHistoryType())
                     .description(entity.getDescription())
+                    .build();
+
+    public static final Function<PatientEntity, PatientSearchDto> toSearchDto = entity ->
+            PatientSearchDto.builder()
+                    .id(entity.getId())
+                    .firstName(entity.getFirstName())
+                    .lastName(entity.getLastName())
+                    .birthdate(entity.getBirthdate())
+                    .age(entity.getBirthdate() != null ? Period.between(entity.getBirthdate(), LocalDate.now()).getYears() : 0)
+                    .dpi(entity.getDpi())
+                    .phone(entity.getPhone())
                     .build();
 
 }
