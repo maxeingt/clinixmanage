@@ -113,6 +113,14 @@ public class PatientController {
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
 
+    @GET
+    @Path("/{id}/appointments/{appointmentId}")
+    public MedicalAppointmentDto getMedicalAppointmentById(
+            @PathParam("id") UUID patientId,
+            @PathParam("appointmentId") UUID appointmentId) {
+        return medicalAppointmentService.getMedicalAppointmentById(appointmentId);
+    }
+
     @PUT
     @Path("/{id}/appointments/{appointmentId}")
     @Consumes(MediaType.APPLICATION_JSON)

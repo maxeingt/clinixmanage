@@ -92,6 +92,12 @@ public class MedicalAppointmentService {
         }
     }
 
+    public MedicalAppointmentDto getMedicalAppointmentById(UUID appointmentId) {
+        return medicalAppointmentRepository.findByIdOptional(appointmentId)
+                .map(this::toMedicalAppointmentDto)
+                .orElseThrow(() -> new NotFoundException("Medical appointment not found with id: " + appointmentId));
+    }
+
     public List<MedicalAppointmentDto> getMedicalAppointmentsByPatientId(UUID patientId, MedicalAppointmentFilterDto filter) {
         log.info("Fetching medical appointments for patient: {} with filter - doctorId: {}, clinicId: {}",
                 patientId, filter != null ? filter.doctorId : null, filter != null ? filter.clinicId : null);

@@ -9,6 +9,7 @@ import jakarta.inject.*;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import org.jboss.resteasy.reactive.*;
+import io.smallrye.common.annotation.*;
 
 import java.util.*;
 
@@ -27,6 +28,7 @@ public class NotificationController {
     @Path("/stream/{doctorId}")
     @Produces(MediaType.SERVER_SENT_EVENTS)
     @RestStreamElementType(MediaType.APPLICATION_JSON)
+    @Blocking
     public Multi<NotificationDto> stream(@PathParam("doctorId") UUID doctorId) {
         securityContext.validateOwnDoctorAccess(doctorId);
         return notificationService.register(doctorId);
