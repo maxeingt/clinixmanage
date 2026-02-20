@@ -1,6 +1,5 @@
 package gt.com.xfactory.dto.request;
 
-import gt.com.xfactory.entity.enums.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -21,8 +20,6 @@ public class MedicalRecordRequest {
     private UUID doctorId;
 
     private UUID specialtyId;
-
-    private MedicalRecordType recordType;
 
     @Size(max = 10000, message = "Chief complaint must not exceed 10000 characters")
     private String chiefComplaint;

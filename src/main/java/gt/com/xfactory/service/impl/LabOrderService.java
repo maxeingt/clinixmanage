@@ -159,6 +159,19 @@ public class LabOrderService {
     }
 
     @Transactional
+    public LabOrderDto updateStatus(UUID id, LabOrderStatus status) {
+        var order = labOrderRepository.findByIdOptional(id)
+                .orElseThrow(() -> new NotFoundException("Lab order not found with id: " + id));
+
+        securityContextService.validateDoctorOwnership(order.getDoctor().getId());
+
+        order.setStatus(status);
+        labOrderRepository.persist(order);
+
+        return toLabOrderDto.apply(order);
+    }
+
+    @Transactional
     public void deleteLabOrder(UUID id) {
         log.info("Deleting lab order: {}", id);
 

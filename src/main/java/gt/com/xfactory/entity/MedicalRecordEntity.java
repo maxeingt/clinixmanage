@@ -1,6 +1,5 @@
 package gt.com.xfactory.entity;
 
-import gt.com.xfactory.entity.enums.MedicalRecordType;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,9 +44,6 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "doctor_id", nullable = false)
     private DoctorEntity doctor;
-
-    @Column(name = "record_type", nullable = false)
-    private MedicalRecordType recordType = MedicalRecordType.consultation;
 
     @Column(name = "chief_complaint", columnDefinition = "TEXT")
     private String chiefComplaint;
@@ -99,9 +95,6 @@ public class MedicalRecordEntity extends PanacheEntityBase implements Serializab
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        if (recordType == null) {
-            recordType = MedicalRecordType.consultation;
-        }
     }
 
     @PreUpdate

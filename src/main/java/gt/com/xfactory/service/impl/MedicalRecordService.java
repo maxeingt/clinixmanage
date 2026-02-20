@@ -4,18 +4,14 @@ import gt.com.xfactory.dto.request.*;
 import gt.com.xfactory.dto.request.filter.*;
 import gt.com.xfactory.dto.response.*;
 import gt.com.xfactory.entity.*;
-import gt.com.xfactory.entity.enums.*;
 import gt.com.xfactory.repository.*;
 import gt.com.xfactory.utils.*;
-import io.quarkus.security.identity.*;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.transaction.*;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import lombok.extern.slf4j.*;
-import org.apache.commons.lang3.*;
-import org.eclipse.microprofile.jwt.*;
 
 import java.time.*;
 import java.util.*;
@@ -62,9 +58,6 @@ public class MedicalRecordService {
                 .addEquals(filter.patientId, "patient.id", "patientId")
                 .addEquals(filter.doctorId, "doctor.id", "doctorId")
                 .addEquals(filter.specialtyId, "specialty.id", "specialtyId")
-                .addCondition(StringUtils.isNotBlank(filter.recordType),
-                        "recordType = :recordType", "recordType",
-                        StringUtils.isNotBlank(filter.recordType) ? MedicalRecordType.valueOf(filter.recordType) : null)
                 .addDateRange(filter.startDate, "createdAt", "startDate",
                               filter.endDate, "createdAt", "endDate");
 
@@ -120,7 +113,6 @@ public class MedicalRecordService {
         MedicalRecordEntity record = new MedicalRecordEntity();
         record.setPatient(patient);
         record.setDoctor(doctor);
-        record.setRecordType(request.getRecordType() != null ? request.getRecordType() : MedicalRecordType.consultation);
         record.setChiefComplaint(request.getChiefComplaint());
         record.setPresentIllness(request.getPresentIllness());
         record.setPhysicalExam(request.getPhysicalExam());
@@ -202,7 +194,6 @@ public class MedicalRecordService {
                     .specialtyName(entity.getSpecialty() != null ? entity.getSpecialty().getName() : null)
                     .doctorId(entity.getDoctor().getId())
                     .doctorName(entity.getDoctor().getFirstName() + " " + entity.getDoctor().getLastName())
-                    .recordType(entity.getRecordType() != null ? entity.getRecordType().name() : null)
                     .chiefComplaint(entity.getChiefComplaint())
                     .presentIllness(entity.getPresentIllness())
                     .physicalExam(entity.getPhysicalExam())

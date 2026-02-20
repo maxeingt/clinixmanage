@@ -23,7 +23,6 @@ public class MedicalRecordDto implements Serializable {
     private String specialtyName;
     private UUID doctorId;
     private String doctorName;
-    private String recordType;
     private String chiefComplaint;
     private String presentIllness;
     private String physicalExam;

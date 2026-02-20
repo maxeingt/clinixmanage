@@ -1,7 +1,6 @@
 package gt.com.xfactory.repository;
 
 import gt.com.xfactory.entity.MedicalRecordEntity;
-import gt.com.xfactory.entity.enums.MedicalRecordType;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -30,10 +29,6 @@ public class MedicalRecordRepository implements PanacheRepository<MedicalRecordE
 
     public List<MedicalRecordEntity> findByPatientIdAndSpecialtyId(UUID patientId, UUID specialtyId) {
         return find("patient.id = ?1 AND specialty.id = ?2", patientId, specialtyId).list();
-    }
-
-    public List<MedicalRecordEntity> findByPatientIdAndRecordType(UUID patientId, MedicalRecordType recordType) {
-        return find("patient.id = ?1 AND recordType = ?2", patientId, recordType).list();
     }
 
     public Optional<MedicalRecordEntity> findByIdOptional(UUID id) {

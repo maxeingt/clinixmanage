@@ -73,6 +73,14 @@ public class LabOrderController {
         return labOrderService.updateLabOrder(id, request);
     }
 
+    @PATCH
+    @Path("/{id}/status")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("doctor")
+    public LabOrderDto updateStatus(@PathParam("id") UUID id, @Valid LabOrderStatusRequest request) {
+        return labOrderService.updateStatus(id, request.getStatus());
+    }
+
     @DELETE
     @Path("/{id}")
     @RolesAllowed("doctor")

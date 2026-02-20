@@ -18,9 +18,6 @@ public class MedicalRecordFilterDto {
     @QueryParam("specialtyId")
     public UUID specialtyId;
 
-    @QueryParam("recordType")
-    public String recordType;
-
     @QueryParam("startDate")
     public LocalDateTime startDate;
 
