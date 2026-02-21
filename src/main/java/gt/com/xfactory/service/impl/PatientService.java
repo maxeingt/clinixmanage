@@ -77,9 +77,7 @@ public class PatientService {
             fb.addCondition(true, subquery, subParams);
         }
 
-        fb.addCondition(StringUtils.isNotBlank(filter.name),
-                        "(LOWER(firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(lastName) LIKE LOWER(CONCAT('%', :name, '%')))",
-                        "name", filter.name)
+        fb.addNameSearch(filter.name, "firstName", "lastName")
                 .addLike(filter.phone, "phone")
                 .addLike(filter.maritalStatus, "maritalStatus")
                 .addLike(filter.email, "email")

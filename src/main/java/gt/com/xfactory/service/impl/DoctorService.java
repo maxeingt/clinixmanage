@@ -48,6 +48,7 @@ public class DoctorService {
         log.info("Fetching doctors with filter - pageRequest: {}, filter: {}", pageRequest, filter);
 
         var fb = FilterBuilder.create()
+                .addNameSearch(filter.name, "firstName", "lastName")
                 .addLike(filter.firstName, "firstName")
                 .addLike(filter.lastName, "lastName")
                 .addLike(filter.mail, "email", "mail")

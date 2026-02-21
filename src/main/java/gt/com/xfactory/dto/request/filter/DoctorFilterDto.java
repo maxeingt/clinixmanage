@@ -8,6 +8,10 @@ import java.util.*;
 
 @Data
 public class DoctorFilterDto {
+    @QueryParam("name")
+    @Pattern(regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñ\\s'-]{1,100}$", message = "Name contains invalid characters.")
+    public String name;
+
     @QueryParam("firstName")
     @Pattern(regexp = "^[A-Za-zÁÉÍÓÚáéíóúÑñ\\s'-]{1,50}$", message = "First name contains invalid characters.")
     public String firstName;

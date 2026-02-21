@@ -1,6 +1,7 @@
 package gt.com.xfactory.repository;
 
 import gt.com.xfactory.entity.PatientEntity;
+import gt.com.xfactory.utils.FilterBuilder;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 
@@ -24,12 +25,14 @@ public class PatientRepository implements PanacheRepository<PatientEntity> {
     }
 
     public List<PatientEntity> searchByTerm(String q) {
-        return find(
-                "LOWER(firstName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(lastName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR dpi LIKE CONCAT('%', :q, '%') " +
-                "OR phone LIKE CONCAT('%', :q, '%')",
-                Map.of("q", q))
+        Map<String, Object> params = new HashMap<>();
+        String nameCondition = FilterBuilder.buildNameTokenCondition(q, "firstName", "lastName", params, "n");
+        params.put("dpi", q);
+        params.put("phone", q);
+        return find(nameCondition +
+                " OR dpi LIKE CONCAT('%', :dpi, '%')" +
+                " OR phone LIKE CONCAT('%', :phone, '%')",
+                params)
                 .page(0, 20)
                 .list();
     }

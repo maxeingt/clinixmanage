@@ -4,6 +4,7 @@ import gt.com.xfactory.dto.response.GlobalSearchDto;
 import gt.com.xfactory.dto.response.GlobalSearchDto.*;
 import gt.com.xfactory.entity.*;
 import gt.com.xfactory.repository.*;
+import gt.com.xfactory.utils.FilterBuilder;
 import jakarta.enterprise.context.*;
 import jakarta.inject.*;
 import jakarta.ws.rs.*;
@@ -80,12 +81,16 @@ public class SearchService {
     }
 
     private List<PatientResult> searchPatients(String q) {
+        Map<String, Object> params = new HashMap<>();
+        String nameCondition = FilterBuilder.buildNameTokenCondition(q, "firstName", "lastName", params, "n");
+        params.put("dpi", q);
+        params.put("phone", q);
+
         return patientRepository.find(
-                "LOWER(firstName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(lastName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR dpi LIKE CONCAT('%', :q, '%') " +
-                "OR phone LIKE CONCAT('%', :q, '%')",
-                Map.of("q", q))
+                nameCondition +
+                " OR dpi LIKE CONCAT('%', :dpi, '%')" +
+                " OR phone LIKE CONCAT('%', :phone, '%')",
+                params)
                 .page(0, MAX_RESULTS_PER_TYPE)
                 .stream()
                 .map(p -> PatientResult.builder()
@@ -100,14 +105,11 @@ public class SearchService {
     }
 
     private List<AppointmentResult> searchAppointments(String q, UUID currentDoctorId) {
-        StringBuilder jpql = new StringBuilder(
-                "(LOWER(patient.firstName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(patient.lastName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(doctor.firstName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(doctor.lastName) LIKE LOWER(CONCAT('%', :q, '%')))"
-        );
         Map<String, Object> params = new HashMap<>();
-        params.put("q", q);
+        String patientNameCond = FilterBuilder.buildNameTokenCondition(q, "patient.firstName", "patient.lastName", params, "pat");
+        String doctorNameCond = FilterBuilder.buildNameTokenCondition(q, "doctor.firstName", "doctor.lastName", params, "doc");
+
+        StringBuilder jpql = new StringBuilder("(" + patientNameCond + " OR " + doctorNameCond + ")");
 
         if (currentDoctorId != null) {
             jpql.append(" AND doctor.id = :doctorId");
@@ -131,10 +133,10 @@ public class SearchService {
     }
 
     private List<DoctorResult> searchDoctors(String q) {
-        List<DoctorEntity> doctors = doctorRepository.find(
-                "LOWER(firstName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(lastName) LIKE LOWER(CONCAT('%', :q, '%'))",
-                Map.of("q", q))
+        Map<String, Object> params = new HashMap<>();
+        String condition = FilterBuilder.buildNameTokenCondition(q, "firstName", "lastName", params, "d");
+
+        List<DoctorEntity> doctors = doctorRepository.find(condition, params)
                 .page(0, MAX_RESULTS_PER_TYPE)
                 .list();
 
@@ -170,13 +172,13 @@ public class SearchService {
     }
 
     private List<RecordResult> searchRecords(String q, UUID currentDoctorId) {
-        StringBuilder jpql = new StringBuilder(
-                "(LOWER(patient.firstName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(patient.lastName) LIKE LOWER(CONCAT('%', :q, '%')) " +
-                "OR LOWER(chiefComplaint) LIKE LOWER(CONCAT('%', :q, '%')))"
-        );
         Map<String, Object> params = new HashMap<>();
-        params.put("q", q);
+        String patientNameCond = FilterBuilder.buildNameTokenCondition(q, "patient.firstName", "patient.lastName", params, "pat");
+        params.put("complaint", q);
+
+        StringBuilder jpql = new StringBuilder(
+                "(" + patientNameCond + " OR LOWER(chiefComplaint) LIKE LOWER(CONCAT('%', :complaint, '%')))"
+        );
 
         if (currentDoctorId != null) {
             jpql.append(" AND doctor.id = :doctorId");
